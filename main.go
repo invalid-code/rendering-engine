@@ -77,6 +77,7 @@ func main() {
 	var vbo, vao uint32
 	gl.GenBuffers(1, &vbo)
 	gl.GenVertexArrays(1, &vao)
+	gl.BindVertexArray(vao)
 	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
 	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*4, gl.Ptr(vertices), gl.STATIC_DRAW)
 	gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, 4*3, uintptr(0))
@@ -89,6 +90,7 @@ func main() {
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 
 		gl.UseProgram(program)
+		gl.BindVertexArray(vao)
 		gl.DrawArrays(gl.TRIANGLES, 0, 3)
 
 		window.SwapBuffers()
