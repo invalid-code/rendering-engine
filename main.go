@@ -12,11 +12,18 @@ func init() {
 	runtime.LockOSThread()
 }
 
-var vertices = []float32{
-	-0.5, 0.0, 0.0,
-	-0.5, 0.5, 0.0,
-	0.5, 0.0, 0.0,
-}
+var (
+	vertices = []float32{
+		-0.5, 0.0, 0.0,
+		0.5, 0.0, 0.0,
+		-0.5, 0.5, 0.0,
+		0.5, 0.5, 0.0,
+	}
+	indices = []uint32{
+		0, 1, 2,
+		1, 3, 2,
+	}
+)
 
 const (
 	vShaderSrc = `#version 330
@@ -75,24 +82,32 @@ func initGlfw() *glfw.Window {
 	return window
 }
 
-func initVao() uint32 {
-	var vbo, vao uint32
+func initVao() (uint32, uint32) {
+	var vbo, vao, ebo uint32
 	gl.GenBuffers(1, &vbo)
+	gl.GenBuffers(1, &ebo)
 	gl.GenVertexArrays(1, &vao)
+
 	gl.BindVertexArray(vao)
 	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
+	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo)
+
 	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*4, gl.Ptr(vertices), gl.STATIC_DRAW)
+	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(indices)*4, gl.Ptr(indices), gl.STATIC_DRAW)
+
 	gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, 4*3, uintptr(0))
 	gl.EnableVertexAttribArray(0)
-	return vao
+	return vao, ebo
 }
 
-func draw(vao uint32, program uint32) {
+func draw(vao uint32, program uint32, ebo uint32) {
 	gl.Clear(gl.COLOR_BUFFER_BIT)
 
 	gl.UseProgram(program)
 	gl.BindVertexArray(vao)
-	gl.DrawArrays(gl.TRIANGLES, 0, 3)
+
+	// gl.DrawArrays(gl.TRIANGLES, 0, 3)
+	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.Ptr(uintptr(0)))
 }
 
 func redraw(window *glfw.Window) {
@@ -114,12 +129,12 @@ func main() {
 	defer glfw.Terminate()
 
 	program := createProgram()
-	vao := initVao()
+	vao, ebo := initVao()
 
 	for !window.ShouldClose() {
 		handleInput(window)
 
-		draw(vao, program)
+		draw(vao, program, ebo)
 
 		redraw(window)
 	}
