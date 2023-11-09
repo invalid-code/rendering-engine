@@ -53,27 +53,29 @@ func compileShader(shaderSrc string, shaderType uint32) uint32 {
 	return shader
 }
 
-func main() {
-	if err := glfw.Init(); err != nil {
-		panic(err)
-	}
-	defer glfw.Terminate()
-	window, err := glfw.CreateWindow(600, 400, "heat rendering engine", nil, nil)
-	if err != nil {
-		panic(err)
-	}
-	window.MakeContextCurrent()
-	if err := gl.Init(); err != nil {
-		panic(err)
-	}
-
+func createProgram() uint32 {
 	vShader := compileShader(vShaderSrc, gl.VERTEX_SHADER)
 	fShader := compileShader(fShaderSrc, gl.FRAGMENT_SHADER)
 	program := gl.CreateProgram()
 	gl.AttachShader(program, vShader)
 	gl.AttachShader(program, fShader)
 	gl.LinkProgram(program)
+	return program
+}
 
+func initGlfw() *glfw.Window {
+	if err := glfw.Init(); err != nil {
+		panic(err)
+	}
+	window, err := glfw.CreateWindow(600, 400, "heat rendering engine", nil, nil)
+	if err != nil {
+		panic(err)
+	}
+	window.MakeContextCurrent()
+	return window
+}
+
+func initVao() uint32 {
 	var vbo, vao uint32
 	gl.GenBuffers(1, &vbo)
 	gl.GenVertexArrays(1, &vao)
@@ -82,18 +84,43 @@ func main() {
 	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*4, gl.Ptr(vertices), gl.STATIC_DRAW)
 	gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, 4*3, uintptr(0))
 	gl.EnableVertexAttribArray(0)
+	return vao
+}
+
+func draw(vao uint32, program uint32) {
+	gl.Clear(gl.COLOR_BUFFER_BIT)
+
+	gl.UseProgram(program)
+	gl.BindVertexArray(vao)
+	gl.DrawArrays(gl.TRIANGLES, 0, 3)
+}
+
+func redraw(window *glfw.Window) {
+	window.SwapBuffers()
+	glfw.PollEvents()
+}
+
+func handleInput(window *glfw.Window) {
+	if window.GetKey(glfw.KeyEscape) == glfw.Press {
+		window.SetShouldClose(true)
+	}
+}
+
+func main() {
+	window := initGlfw()
+	if err := gl.Init(); err != nil {
+		panic(err)
+	}
+	defer glfw.Terminate()
+
+	program := createProgram()
+	vao := initVao()
 
 	for !window.ShouldClose() {
-		if window.GetKey(glfw.KeyEscape) == glfw.Press {
-			window.SetShouldClose(true)
-		}
-		gl.Clear(gl.COLOR_BUFFER_BIT)
+		handleInput(window)
 
-		gl.UseProgram(program)
-		gl.BindVertexArray(vao)
-		gl.DrawArrays(gl.TRIANGLES, 0, 3)
+		draw(vao, program)
 
-		window.SwapBuffers()
-		glfw.PollEvents()
+		redraw(window)
 	}
 }
