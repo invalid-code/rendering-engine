@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"runtime"
 
 	"github.com/go-gl/gl/v3.3-compatibility/gl"
@@ -22,14 +23,14 @@ const (
 
 layout (location = 0) in vec3 position;
 
-void main {
+void main() {
 	gl_Position = vec4(position.x, position.y, position.z , 1.0);
 }` + "\x00"
 	fShaderSrc = `#version 330
 
 layout (location = 0) out vec4 color;
 
-void main {
+void main() {
 	color = vec4(0.0, 0.0, 1.0, 1.0);
 }` + "\x00"
 )
@@ -40,6 +41,14 @@ func compileShader(shaderSrc string, shaderType uint32) uint32 {
 	gl.ShaderSource(shader, 1, cstring, nil)
 	free()
 	gl.CompileShader(shader)
+
+	var compileStatus int32
+	var shaderLog uint8 = 255
+	gl.GetShaderiv(shader, gl.COMPILE_STATUS, &compileStatus)
+	if compileStatus != gl.TRUE {
+		gl.GetShaderInfoLog(shader, 255, nil, &shaderLog)
+		log.Fatalf("\n%v\n", gl.GoStr(&shaderLog))
+	}
 
 	return shader
 }
@@ -65,8 +74,9 @@ func main() {
 	gl.AttachShader(program, fShader)
 	gl.LinkProgram(program)
 
-	var vbo uint32
+	var vbo, vao uint32
 	gl.GenBuffers(1, &vbo)
+	gl.GenVertexArrays(1, &vao)
 	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
 	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*4, gl.Ptr(vertices), gl.STATIC_DRAW)
 	gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, 4*3, uintptr(0))
