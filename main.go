@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"os"
 	"runtime"
 
 	"github.com/go-gl/gl/v3.3-compatibility/gl"
@@ -25,22 +26,30 @@ var (
 	}
 )
 
-const (
-	vShaderSrc = `#version 330
+// const (
+// 	vShaderSrc = `#version 330
 
-layout (location = 0) in vec3 position;
+// layout (location = 0) in vec3 position;
 
-void main() {
-	gl_Position = vec4(position.x, position.y, position.z , 1.0);
-}` + "\x00"
-	fShaderSrc = `#version 330
+// void main() {
+// 	gl_Position = vec4(position.x, position.y, position.z , 1.0);
+// }` + "\x00"
+// 	fShaderSrc = `#version 330
 
-layout (location = 0) out vec4 color;
+// layout (location = 0) out vec4 color;
 
-void main() {
-	color = vec4(0.0, 0.0, 1.0, 1.0);
-}` + "\x00"
-)
+// void main() {
+// 	color = vec4(0.0, 0.0, 1.0, 1.0);
+// }` + "\x00"
+// )
+
+func readFile(path string) string {
+	file, err := os.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+	return string(file)
+}
 
 func compileShader(shaderSrc string, shaderType uint32) uint32 {
 	shader := gl.CreateShader(shaderType)
@@ -61,8 +70,8 @@ func compileShader(shaderSrc string, shaderType uint32) uint32 {
 }
 
 func createProgram() uint32 {
-	vShader := compileShader(vShaderSrc, gl.VERTEX_SHADER)
-	fShader := compileShader(fShaderSrc, gl.FRAGMENT_SHADER)
+	vShader := compileShader(readFile("assets/shader/basic_trianglev.glsl"), gl.VERTEX_SHADER)
+	fShader := compileShader(readFile("assets/shader/basic_trianglef.glsl"), gl.FRAGMENT_SHADER)
 	program := gl.CreateProgram()
 	gl.AttachShader(program, vShader)
 	gl.AttachShader(program, fShader)
@@ -123,10 +132,10 @@ func handleInput(window *glfw.Window) {
 
 func main() {
 	window := initGlfw()
+	defer glfw.Terminate()
 	if err := gl.Init(); err != nil {
 		panic(err)
 	}
-	defer glfw.Terminate()
 
 	program := createProgram()
 	vao, ebo := initVao()
