@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"math"
 	"os"
 	"runtime"
 
@@ -9,46 +10,34 @@ import (
 	"github.com/go-gl/glfw/v3.3/glfw"
 )
 
-func init() {
-	runtime.LockOSThread()
-}
+const (
+	floatSize = 4
+	attribs   = 3
+)
 
 var (
 	vertices = []float32{
-		-0.5, 0.0, 0.0,
-		0.5, 0.0, 0.0,
-		-0.5, 0.5, 0.0,
-		0.5, 0.5, 0.0,
+		-0.5, 0.0, 0.0, 1.0, 0.0, 0.0,
+		0.5, 0.0, 0.0, 0.0, 1.0, 0.0,
+		-0.5, 0.5, 0.0, 0.0, 0.0, 1.0,
+		// 0.5, 0.5, 0.0, 0.0, 0.0, 1.0,
 	}
 	indices = []uint32{
 		0, 1, 2,
-		1, 3, 2,
+		// 1, 3, 2,
 	}
 )
 
-// const (
-// 	vShaderSrc = `#version 330
-
-// layout (location = 0) in vec3 position;
-
-// void main() {
-// 	gl_Position = vec4(position.x, position.y, position.z , 1.0);
-// }` + "\x00"
-// 	fShaderSrc = `#version 330
-
-// layout (location = 0) out vec4 color;
-
-// void main() {
-// 	color = vec4(0.0, 0.0, 1.0, 1.0);
-// }` + "\x00"
-// )
+func init() {
+	runtime.LockOSThread()
+}
 
 func readFile(path string) string {
 	file, err := os.ReadFile(path)
 	if err != nil {
 		panic(err)
 	}
-	return string(file)
+	return string(file) + "\x00"
 }
 
 func compileShader(shaderSrc string, shaderType uint32) uint32 {
@@ -101,19 +90,28 @@ func initVao() (uint32, uint32) {
 	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo)
 
-	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*4, gl.Ptr(vertices), gl.STATIC_DRAW)
-	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(indices)*4, gl.Ptr(indices), gl.STATIC_DRAW)
+	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*floatSize, gl.Ptr(vertices), gl.STATIC_DRAW)
+	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(indices)*floatSize, gl.Ptr(indices), gl.STATIC_DRAW)
 
-	gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, 4*3, uintptr(0))
+	gl.VertexAttribPointerWithOffset(0, attribs, gl.FLOAT, false, int32(floatSize*len(vertices)/attribs), uintptr(0))
 	gl.EnableVertexAttribArray(0)
+
+	gl.VertexAttribPointerWithOffset(1, attribs, gl.FLOAT, false, int32(floatSize*len(vertices)/attribs), uintptr(attribs*floatSize))
+	gl.EnableVertexAttribArray(1)
 	return vao, ebo
 }
 
 func draw(vao uint32, program uint32, ebo uint32) {
+	time := glfw.GetTime()
+	transperancyUniformLocation := gl.GetUniformLocation(program, gl.Str("transperancy\x00"))
+	transperancyUniform := math.Sin(time) / 0.5
+
 	gl.Clear(gl.COLOR_BUFFER_BIT)
 
 	gl.UseProgram(program)
 	gl.BindVertexArray(vao)
+
+	gl.Uniform1f(transperancyUniformLocation, float32(transperancyUniform))
 
 	// gl.DrawArrays(gl.TRIANGLES, 0, 3)
 	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.Ptr(uintptr(0)))
