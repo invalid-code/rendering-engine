@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"math"
 	"os"
 	"runtime"
 
@@ -11,20 +10,21 @@ import (
 )
 
 const (
-	floatSize = 4
-	attribs   = 3
+	FLOAT_SIZE = 4
+	UINT_SIZE = FLOAT_SIZE
+	ATTRIB_CNT   = 3
 )
 
 var (
-	vertices = []float32{
-		-0.5, 0.0, 0.0, 1.0, 0.0, 0.0,
-		0.5, 0.0, 0.0, 0.0, 1.0, 0.0,
-		-0.5, 0.5, 0.0, 0.0, 0.0, 1.0,
-		// 0.5, 0.5, 0.0, 0.0, 0.0, 1.0,
+	VERTICES = []float32{
+		-0.5, 0.0, 0.0,  1.0, 0.0, 0.0, 
+		 0.5, 0.0, 0.0,  0.0, 0.0, 1.0, 
+		-0.5, 0.5, 0.0,  0.0, 0.0, 1.0, 
+		 0.5, 0.5, 0.0,  1.0, 0.0,0.0, 
 	}
-	indices = []uint32{
+	INDICES = []uint32{
 		0, 1, 2,
-		// 1, 3, 2,
+		1, 3, 2,
 	}
 )
 
@@ -90,30 +90,23 @@ func initVao() (uint32, uint32) {
 	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo)
 
-	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*floatSize, gl.Ptr(vertices), gl.STATIC_DRAW)
-	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(indices)*floatSize, gl.Ptr(indices), gl.STATIC_DRAW)
+	gl.BufferData(gl.ARRAY_BUFFER, len(VERTICES)*FLOAT_SIZE, gl.Ptr(VERTICES), gl.STATIC_DRAW)
+	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(INDICES)*UINT_SIZE, gl.Ptr(INDICES), gl.STATIC_DRAW)
 
-	gl.VertexAttribPointerWithOffset(0, attribs, gl.FLOAT, false, int32(floatSize*len(vertices)/attribs), uintptr(0))
+	gl.VertexAttribPointerWithOffset(0, ATTRIB_CNT, gl.FLOAT, false, int32(FLOAT_SIZE*ATTRIB_CNT) * 2, uintptr(0))
 	gl.EnableVertexAttribArray(0)
 
-	gl.VertexAttribPointerWithOffset(1, attribs, gl.FLOAT, false, int32(floatSize*len(vertices)/attribs), uintptr(attribs*floatSize))
+	gl.VertexAttribPointerWithOffset(1, ATTRIB_CNT, gl.FLOAT, false, int32(FLOAT_SIZE*ATTRIB_CNT) * 2, uintptr(FLOAT_SIZE*ATTRIB_CNT))
 	gl.EnableVertexAttribArray(1)
 	return vao, ebo
 }
 
 func draw(vao uint32, program uint32, ebo uint32) {
-	time := glfw.GetTime()
-	transperancyUniformLocation := gl.GetUniformLocation(program, gl.Str("transperancy\x00"))
-	transperancyUniform := math.Sin(time) / 0.5
-
 	gl.Clear(gl.COLOR_BUFFER_BIT)
 
 	gl.UseProgram(program)
 	gl.BindVertexArray(vao)
 
-	gl.Uniform1f(transperancyUniformLocation, float32(transperancyUniform))
-
-	// gl.DrawArrays(gl.TRIANGLES, 0, 3)
 	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.Ptr(uintptr(0)))
 }
 
