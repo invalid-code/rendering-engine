@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"math"
 	"os"
 	"runtime"
 
@@ -13,14 +14,15 @@ const (
 	FLOAT_SIZE = 4
 	UINT_SIZE = FLOAT_SIZE
 	ATTRIB_CNT   = 3
+	VERTEX_ATTRIB_CNT = 2
 )
 
 var (
 	VERTICES = []float32{
-		-0.5, 0.0, 0.0,  1.0, 0.0, 0.0, 
-		 0.5, 0.0, 0.0,  0.0, 0.0, 1.0, 
-		-0.5, 0.5, 0.0,  0.0, 0.0, 1.0, 
-		 0.5, 0.5, 0.0,  1.0, 0.0,0.0, 
+		-0.5, 0.0, 0.0,  0.0, 1.0, 0.0, 
+		 0.5, 0.0, 0.0,  0.0, 1.0, 0.0, 
+		-0.5, 0.5, 0.0,  0.0, 1.0, 0.0, 
+		 0.5, 0.5, 0.0,  0.0, 1.0, 0.0, 
 	}
 	INDICES = []uint32{
 		0, 1, 2,
@@ -93,10 +95,10 @@ func initVao() (uint32, uint32) {
 	gl.BufferData(gl.ARRAY_BUFFER, len(VERTICES)*FLOAT_SIZE, gl.Ptr(VERTICES), gl.STATIC_DRAW)
 	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(INDICES)*UINT_SIZE, gl.Ptr(INDICES), gl.STATIC_DRAW)
 
-	gl.VertexAttribPointerWithOffset(0, ATTRIB_CNT, gl.FLOAT, false, int32(FLOAT_SIZE*ATTRIB_CNT) * 2, uintptr(0))
+	gl.VertexAttribPointerWithOffset(0, ATTRIB_CNT, gl.FLOAT, false, int32(FLOAT_SIZE*ATTRIB_CNT) * VERTEX_ATTRIB_CNT, uintptr(0))
 	gl.EnableVertexAttribArray(0)
 
-	gl.VertexAttribPointerWithOffset(1, ATTRIB_CNT, gl.FLOAT, false, int32(FLOAT_SIZE*ATTRIB_CNT) * 2, uintptr(FLOAT_SIZE*ATTRIB_CNT))
+	gl.VertexAttribPointerWithOffset(1, ATTRIB_CNT, gl.FLOAT, false, int32(FLOAT_SIZE*ATTRIB_CNT) * VERTEX_ATTRIB_CNT, uintptr(FLOAT_SIZE*ATTRIB_CNT))
 	gl.EnableVertexAttribArray(1)
 	return vao, ebo
 }
@@ -106,6 +108,10 @@ func draw(vao uint32, program uint32, ebo uint32) {
 
 	gl.UseProgram(program)
 	gl.BindVertexArray(vao)
+	currentTime := glfw.GetTime()
+	greenColor := math.Sin(currentTime) / 2.0 + 0.5
+	greenColorLocation := gl.GetUniformLocation(program, gl.Str("green_color\x00"))
+	gl.Uniform1f(greenColorLocation, float32(greenColor))
 
 	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.Ptr(uintptr(0)))
 }
