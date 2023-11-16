@@ -1,32 +1,29 @@
 package main
 
 import (
+	"fmt"
+	"image"
+	"image/draw"
+	_ "image/png"
 	"log"
-	"math"
 	"os"
 	"runtime"
 
 	"github.com/go-gl/gl/v3.3-compatibility/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
-)
-
-const (
-	FLOAT_SIZE = 4
-	UINT_SIZE = FLOAT_SIZE
-	ATTRIB_CNT   = 3
-	VERTEX_ATTRIB_CNT = 2
+	"github.com/go-gl/mathgl/mgl32"
 )
 
 var (
 	VERTICES = []float32{
-		-0.5, 0.0, 0.0,  0.0, 1.0, 0.0, 
-		 0.5, 0.0, 0.0,  0.0, 1.0, 0.0, 
-		-0.5, 0.5, 0.0,  0.0, 1.0, 0.0, 
-		 0.5, 0.5, 0.0,  0.0, 1.0, 0.0, 
+		-0.5, 0.0, 0.0,  0.0, 0.0, 1.0,  0.0, 0.0,  // bottom-left
+		 0.5, 0.0, 0.0,  0.0, 0.0, 1.0,  1.0, 0.0,  // bottom-right
+		-0.5, 0.5, 0.0,  0.0, 0.0, 1.0,  0.0, 1.0,  // top-left
+		 0.5, 0.5, 0.0,  0.0, 0.0, 1.0,  1.0, 1.0,  // top-right
 	}
 	INDICES = []uint32{
-		0, 1, 2,
-		1, 3, 2,
+		0, 1, 2,  // first triangle
+		1, 3, 2,  // second triangle
 	}
 )
 
@@ -50,7 +47,7 @@ func compileShader(shaderSrc string, shaderType uint32) uint32 {
 	gl.CompileShader(shader)
 
 	var compileStatus int32
-	var shaderLog uint8 = 255
+	var shaderLog uint8
 	gl.GetShaderiv(shader, gl.COMPILE_STATUS, &compileStatus)
 	if compileStatus != gl.TRUE {
 		gl.GetShaderInfoLog(shader, 255, nil, &shaderLog)
@@ -82,36 +79,60 @@ func initGlfw() *glfw.Window {
 	return window
 }
 
-func initVao() (uint32, uint32) {
-	var vbo, vao, ebo uint32
+func initVao() (uint32, uint32, uint32) {
+	var vbo, vao, ebo, texture uint32
 	gl.GenBuffers(1, &vbo)
 	gl.GenBuffers(1, &ebo)
 	gl.GenVertexArrays(1, &vao)
+	gl.GenTextures(gl.TEXTURE_2D, &texture)
 
 	gl.BindVertexArray(vao)
 	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo)
+	gl.BindTexture(gl.TEXTURE_2D, texture)
 
-	gl.BufferData(gl.ARRAY_BUFFER, len(VERTICES)*FLOAT_SIZE, gl.Ptr(VERTICES), gl.STATIC_DRAW)
-	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(INDICES)*UINT_SIZE, gl.Ptr(INDICES), gl.STATIC_DRAW)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
 
-	gl.VertexAttribPointerWithOffset(0, ATTRIB_CNT, gl.FLOAT, false, int32(FLOAT_SIZE*ATTRIB_CNT) * VERTEX_ATTRIB_CNT, uintptr(0))
+	f, err := os.Open("assets/texture/Brickwall2_Texture.png")
+	if err != nil {
+		panic(err)
+	}
+	img, _, err := image.Decode(f)
+	if err != nil {
+		panic(err)
+	}
+	rgba := image.NewRGBA(img.Bounds())
+	if rgba.Stride != rgba.Rect.Size().X*4 {
+		panic("unsupported stride")
+	}
+	draw.Draw(rgba, rgba.Bounds(), img, image.Point{0, 0}, draw.Src)
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, int32(rgba.Rect.Size().X), int32(rgba.Rect.Size().Y), 0, gl.RGBA, gl.UNSIGNED_BYTE, gl.Ptr(rgba.Pix))
+	gl.GenerateMipmap(gl.TEXTURE_2D)
+
+	gl.BufferData(gl.ARRAY_BUFFER, len(VERTICES)*4, gl.Ptr(VERTICES), gl.STATIC_DRAW)
+	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(INDICES)*4, gl.Ptr(INDICES), gl.STATIC_DRAW)
+
+	gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, int32(8*4), uintptr(0))
 	gl.EnableVertexAttribArray(0)
 
-	gl.VertexAttribPointerWithOffset(1, ATTRIB_CNT, gl.FLOAT, false, int32(FLOAT_SIZE*ATTRIB_CNT) * VERTEX_ATTRIB_CNT, uintptr(FLOAT_SIZE*ATTRIB_CNT))
+	gl.VertexAttribPointerWithOffset(1, 3, gl.FLOAT, false, int32(8*4), uintptr(3*4))
 	gl.EnableVertexAttribArray(1)
-	return vao, ebo
+
+	gl.VertexAttribPointerWithOffset(2, 2, gl.FLOAT, false, int32(8*4), uintptr(6*4))
+	gl.EnableVertexAttribArray(2)
+	return vao, ebo, texture
 }
 
-func draw(vao uint32, program uint32, ebo uint32) {
+func drawBuffer(vao uint32, program uint32, ebo uint32, texture uint32) {
 	gl.Clear(gl.COLOR_BUFFER_BIT)
 
 	gl.UseProgram(program)
 	gl.BindVertexArray(vao)
-	currentTime := glfw.GetTime()
-	greenColor := math.Sin(currentTime) / 2.0 + 0.5
-	greenColorLocation := gl.GetUniformLocation(program, gl.Str("green_color\x00"))
-	gl.Uniform1f(greenColorLocation, float32(greenColor))
+	gl.ActiveTexture(gl.TEXTURE0)
+	gl.BindTexture(gl.TEXTURE_2D, texture)
 
 	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.Ptr(uintptr(0)))
 }
@@ -135,12 +156,15 @@ func main() {
 	}
 
 	program := createProgram()
-	vao, ebo := initVao()
+	vao, ebo, texture := initVao()
+
+	translate := mgl32.Translate2D(0.05, 0.05)
+	fmt.Println(translate)
 
 	for !window.ShouldClose() {
 		handleInput(window)
 
-		draw(vao, program, ebo)
+		drawBuffer(vao, program, ebo, texture)
 
 		redraw(window)
 	}
