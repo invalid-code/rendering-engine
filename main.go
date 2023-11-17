@@ -64,6 +64,9 @@ func createProgram() uint32 {
 	gl.AttachShader(program, vShader)
 	gl.AttachShader(program, fShader)
 	gl.LinkProgram(program)
+	gl.UseProgram(program)
+	gl.DeleteShader(vShader)
+	gl.DeleteShader(fShader)
 	return program
 }
 
@@ -158,7 +161,10 @@ func main() {
 	program := createProgram()
 	vao, ebo, texture := initVao()
 
-	translate := mgl32.Translate2D(0.05, 0.05)
+	translate := mgl32.Rotate2D(45.0).Mat4()
+	translateLocation := gl.GetUniformLocation(program, gl.Str("translate\x00"))
+	gl.UniformMatrix4fv(translateLocation, 1, false, &translate[0])
+	// mgl32.Rotate2D(45).Mat4()
 	fmt.Println(translate)
 
 	for !window.ShouldClose() {
