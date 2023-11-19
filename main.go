@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"image"
 	"image/draw"
 	_ "image/png"
@@ -16,14 +15,14 @@ import (
 
 var (
 	VERTICES = []float32{
-		-0.5, 0.0, 0.0,  0.0, 0.0, 1.0,  0.0, 0.0,  // bottom-left
-		 0.5, 0.0, 0.0,  0.0, 0.0, 1.0,  1.0, 0.0,  // bottom-right
-		-0.5, 0.5, 0.0,  0.0, 0.0, 1.0,  0.0, 1.0,  // top-left
-		 0.5, 0.5, 0.0,  0.0, 0.0, 1.0,  1.0, 1.0,  // top-right
+		-0.5, 0.0, 0.0,  0.0, 0.0, 1.0,  0.0, 0.0, // bottom-left
+		 0.5, 0.0, 0.0,  0.0, 0.0, 1.0,  1.0, 0.0, // bottom-right
+		-0.5, 0.5, 0.0,  0.0, 0.0, 1.0,  0.0, 1.0, // top-left
+		 0.5, 0.5, 0.0,  0.0, 0.0, 1.0,  1.0, 1.0, // top-right
 	}
 	INDICES = []uint32{
-		0, 1, 2,  // first triangle
-		1, 3, 2,  // second triangle
+		0, 1, 2, // first triangle
+		1, 3, 2, // second triangle
 	}
 )
 
@@ -129,11 +128,15 @@ func initVao() (uint32, uint32, uint32) {
 	return vao, ebo, texture
 }
 
-func drawBuffer(vao uint32, program uint32, ebo uint32, texture uint32) {
+func drawBuffer(vao uint32, program uint32, ebo uint32, texture uint32, transform mgl32.Mat4) {
 	gl.Clear(gl.COLOR_BUFFER_BIT)
 
 	gl.UseProgram(program)
 	gl.BindVertexArray(vao)
+	
+	translateLocation := gl.GetUniformLocation(program, gl.Str("transform\x00"))
+	gl.UniformMatrix4fv(translateLocation, 1, false, &(transform)[0])
+
 	gl.ActiveTexture(gl.TEXTURE0)
 	gl.BindTexture(gl.TEXTURE_2D, texture)
 
@@ -161,16 +164,14 @@ func main() {
 	program := createProgram()
 	vao, ebo, texture := initVao()
 
-	translate := mgl32.Rotate2D(45.0).Mat4()
-	translateLocation := gl.GetUniformLocation(program, gl.Str("translate\x00"))
-	gl.UniformMatrix4fv(translateLocation, 1, false, &translate[0])
-	// mgl32.Rotate2D(45).Mat4()
-	fmt.Println(translate)
-
 	for !window.ShouldClose() {
 		handleInput(window)
 
-		drawBuffer(vao, program, ebo, texture)
+		transform := mgl32.Ident4()
+		transform = transform.Mul4(mgl32.Translate3D(0.5, -0.5, 0.0))
+		transform = transform.Mul4(mgl32.HomogRotate3D(float32(glfw.GetTime()), mgl32.Vec3{0, 0, 1}))
+	
+		drawBuffer(vao, program, ebo, texture, transform)
 
 		redraw(window)
 	}
