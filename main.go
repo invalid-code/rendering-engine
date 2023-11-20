@@ -68,15 +68,15 @@ var (
 	}
 	CUBE_POSITIONS = []mgl32.Vec3{
 		mgl32.Vec3{0.0 ,0.0, 0.0},
-		mgl32.Vec3{0.0, 0.0, 0.0},
-		mgl32.Vec3{0.0, 0.0, 0.0},
-		mgl32.Vec3{0.0, 0.0, 0.0},
-		mgl32.Vec3{0.0, 0.0, 0.0},
-		mgl32.Vec3{0.0, 0.0, 0.0},
-		mgl32.Vec3{0.0, 0.0, 0.0},
-		mgl32.Vec3{0.0, 0.0, 0.0},
-		mgl32.Vec3{0.0, 0.0, 0.0},
-		mgl32.Vec3{0.0, 0.0, 0.0},
+		mgl32.Vec3{2.0, 5.0, -15.0},
+		mgl32.Vec3{-1.5, -2.2, -2.5},
+		mgl32.Vec3{-3.8, -2.0, -12.3},
+		mgl32.Vec3{2.4, -0.4, -3.5},
+		mgl32.Vec3{-1.7, 3.0, -7.5},
+		mgl32.Vec3{1.3, -2.0, -2.5},
+		mgl32.Vec3{1.5, 2.0, -2.5},
+		mgl32.Vec3{1.5, 0.2, -1.5},
+		mgl32.Vec3{-1.3, 1.0, -1.5},
 	}
 )
 
@@ -190,8 +190,17 @@ func drawBuffer(vao uint32, program uint32, ebo uint32, texture uint32) {
 	
 	gl.ActiveTexture(gl.TEXTURE0)
 	gl.BindTexture(gl.TEXTURE_2D, texture)
+	
+	for i := range CUBE_POSITIONS {
+		model := mgl32.Ident4()
+		modelLocation := gl.GetUniformLocation(program, gl.Str("model\x00"))
+		model = model.Mul4(mgl32.Translate3D(CUBE_POSITIONS[i][0], CUBE_POSITIONS[i][1], CUBE_POSITIONS[i][2]))
+		angle := float32(i * 20.0)
+		model = model.Mul4(mgl32.HomogRotate3D(mgl32.DegToRad(angle), mgl32.Vec3{0.5, 1.0, 0.0}))
+		gl.UniformMatrix4fv(modelLocation, 1, false, &model[0])
 
-	gl.DrawElements(gl.TRIANGLES, 6*6, gl.UNSIGNED_INT, gl.Ptr(uintptr(0)))
+		gl.DrawElements(gl.TRIANGLES, 6*6, gl.UNSIGNED_INT, gl.Ptr(uintptr(0)))
+	}
 }
 
 func redraw(window *glfw.Window) {
@@ -228,11 +237,6 @@ func main() {
 	for !window.ShouldClose() {
 		handleInput(window)
 
-		model := mgl32.Ident4()
-		modelLocation := gl.GetUniformLocation(program, gl.Str("model\x00"))
-		model = model.Mul4(mgl32.HomogRotate3D(float32(glfw.GetTime()) * mgl32.DegToRad(50.0), mgl32.Vec3{0.5, 1.0, 0.0}))
-		gl.UniformMatrix4fv(modelLocation, 1, false, &model[0])
-		
 		drawBuffer(vao, program, ebo, texture)
 
 		redraw(window)
