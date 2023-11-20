@@ -66,6 +66,18 @@ var (
 		20, 21, 22,
 		21, 22, 23,
 	}
+	CUBE_POSITIONS = []mgl32.Vec3{
+		mgl32.Vec3{0.0 ,0.0, 0.0},
+		mgl32.Vec3{0.0, 0.0, 0.0},
+		mgl32.Vec3{0.0, 0.0, 0.0},
+		mgl32.Vec3{0.0, 0.0, 0.0},
+		mgl32.Vec3{0.0, 0.0, 0.0},
+		mgl32.Vec3{0.0, 0.0, 0.0},
+		mgl32.Vec3{0.0, 0.0, 0.0},
+		mgl32.Vec3{0.0, 0.0, 0.0},
+		mgl32.Vec3{0.0, 0.0, 0.0},
+		mgl32.Vec3{0.0, 0.0, 0.0},
+	}
 )
 
 func init() {
@@ -211,16 +223,16 @@ func main() {
 	viewLocation := gl.GetUniformLocation(program, gl.Str("view\x00"))
 	gl.UniformMatrix4fv(viewLocation, 1, false, &view[0])
 
-	model := mgl32.Ident4()
-	model = model.Mul4(mgl32.HomogRotate3D(mgl32.DegToRad(45.0), mgl32.Vec3{1.0, 0.0, 0.0}))
-	modelLocation := gl.GetUniformLocation(program, gl.Str("model\x00"))
-	gl.UniformMatrix4fv(modelLocation, 1, false, &model[0])
-
 	gl.Enable(gl.DEPTH_TEST)
 
 	for !window.ShouldClose() {
 		handleInput(window)
 
+		model := mgl32.Ident4()
+		modelLocation := gl.GetUniformLocation(program, gl.Str("model\x00"))
+		model = model.Mul4(mgl32.HomogRotate3D(float32(glfw.GetTime()) * mgl32.DegToRad(50.0), mgl32.Vec3{0.5, 1.0, 0.0}))
+		gl.UniformMatrix4fv(modelLocation, 1, false, &model[0])
+		
 		drawBuffer(vao, program, ebo, texture)
 
 		redraw(window)
