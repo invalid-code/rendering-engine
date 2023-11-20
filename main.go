@@ -15,14 +15,56 @@ import (
 
 var (
 	VERTICES = []float32{
+		// first square
 		-0.5, 0.0, 0.0,  0.0, 0.0, 1.0,  0.0, 0.0, // bottom-left
 		 0.5, 0.0, 0.0,  0.0, 0.0, 1.0,  1.0, 0.0, // bottom-right
 		-0.5, 0.5, 0.0,  0.0, 0.0, 1.0,  0.0, 1.0, // top-left
 		 0.5, 0.5, 0.0,  0.0, 0.0, 1.0,  1.0, 1.0, // top-right
+		// second square
+		-0.5, 0.0, 1.0,  0.0, 0.0, 1.0,  0.0, 0.0, // bottom-left
+		 0.5, 0.0, 1.0,  0.0, 0.0, 1.0,  1.0, 0.0, // bottom-right
+		-0.5, 0.5, 1.0,  0.0, 0.0, 1.0,  0.0, 1.0, // top-left
+		 0.5, 0.5, 1.0,  0.0, 0.0, 1.0,  1.0, 1.0, // top-right
+		// third square
+		 0.5, 0.0, 0.0,  0.0, 0.0, 1.0,  0.0, 0.0, // bottom-left
+		 0.5, 0.0, 1.0,  0.0, 0.0, 1.0,  1.0, 0.0, // bottom-right
+		 0.5, 0.5, 0.0,  0.0, 0.0, 1.0,  0.0, 1.0, // top-left
+		 0.5, 0.5, 1.0,  0.0, 0.0, 1.0,  1.0, 1.0, // top-right
+		// fourth square
+		-0.5, 0.0, 0.0,  0.0, 0.0, 1.0,  0.0, 0.0, // bottom-left
+		-0.5, 0.0, 1.0,  0.0, 0.0, 1.0,  1.0, 0.0, // bottom-right
+		-0.5, 0.5, 0.0,  0.0, 0.0, 1.0,  0.0, 1.0, // top-left
+		-0.5, 0.5, 1.0,  0.0, 0.0, 1.0,  1.0, 1.0, // top-right
+		// fifth square
+		-0.5, 0.5, 0.0,  0.0, 0.0, 1.0,  0.0, 0.0, // bottom-left
+		-0.5, 0.5, 1.0,  0.0, 0.0, 1.0,  1.0, 0.0, // bottom-right
+		 0.5, 0.5, 0.0,  0.0, 0.0, 1.0,  0.0, 1.0, // top-left
+		 0.5, 0.5, 1.0,  0.0, 0.0, 1.0,  1.0, 1.0, // top-right
+		// sixth square
+		-0.5, 0.0, 0.0,  0.0, 0.0, 1.0,  0.0, 0.0, // bottom-left
+		-0.5, 0.0, 1.0,  0.0, 0.0, 1.0,  1.0, 0.0, // bottom-right
+		 0.5, 0.0, 0.0,  0.0, 0.0, 1.0,  0.0, 1.0, // top-left
+		 0.5, 0.0, 1.0,  0.0, 0.0, 1.0,  1.0, 1.0, // top-right
 	}
 	INDICES = []uint32{
+		// first square
 		0, 1, 2, // first triangle
-		1, 3, 2, // second triangle
+		1, 2, 3, // second triangle
+		// second square
+		4, 5, 6,
+		5, 6, 7,
+		// third square
+		8, 9, 10,
+		9, 10, 11,
+		// fourth square
+		12, 13, 14,
+		13, 14, 15,
+		// fifth square
+		16, 17, 18,
+		17, 18, 19,
+		// sixth square
+		20, 21, 22,
+		21, 22, 23,
 	}
 )
 
@@ -137,7 +179,7 @@ func drawBuffer(vao uint32, program uint32, ebo uint32, texture uint32) {
 	gl.ActiveTexture(gl.TEXTURE0)
 	gl.BindTexture(gl.TEXTURE_2D, texture)
 
-	gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, gl.Ptr(uintptr(0)))
+	gl.DrawElements(gl.TRIANGLES, 6*6, gl.UNSIGNED_INT, gl.Ptr(uintptr(0)))
 }
 
 func redraw(window *glfw.Window) {
@@ -165,7 +207,7 @@ func main() {
 	projectionLocation := gl.GetUniformLocation(program, gl.Str("projection\x00"))
 	gl.UniformMatrix4fv(projectionLocation, 1, false, &projection[0])
 	
-	view := mgl32.LookAt(0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
+	view := mgl32.LookAt(0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
 	viewLocation := gl.GetUniformLocation(program, gl.Str("view\x00"))
 	gl.UniformMatrix4fv(viewLocation, 1, false, &view[0])
 
