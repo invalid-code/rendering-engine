@@ -5,6 +5,7 @@ import (
 	"image/draw"
 	_ "image/png"
 	"log"
+	"math"
 	"os"
 	"runtime"
 
@@ -14,39 +15,39 @@ import (
 )
 
 var (
-	VERTICES = []float32{
+	vertices = []float32{
 		// first square
-		-0.5, 0.0, 0.0,  0.0, 0.0, 1.0,  0.0, 0.0, // bottom-left
-		 0.5, 0.0, 0.0,  0.0, 0.0, 1.0,  1.0, 0.0, // bottom-right
-		-0.5, 0.5, 0.0,  0.0, 0.0, 1.0,  0.0, 1.0, // top-left
-		 0.5, 0.5, 0.0,  0.0, 0.0, 1.0,  1.0, 1.0, // top-right
+		-0.5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, // bottom-left
+		0.5, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, // bottom-right
+		-0.5, 0.5, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, // top-left
+		0.5, 0.5, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, // top-right
 		// second square
-		-0.5, 0.0, 1.0,  0.0, 0.0, 1.0,  0.0, 0.0, // bottom-left
-		 0.5, 0.0, 1.0,  0.0, 0.0, 1.0,  1.0, 0.0, // bottom-right
-		-0.5, 0.5, 1.0,  0.0, 0.0, 1.0,  0.0, 1.0, // top-left
-		 0.5, 0.5, 1.0,  0.0, 0.0, 1.0,  1.0, 1.0, // top-right
+		-0.5, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, // bottom-left
+		0.5, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, // bottom-right
+		-0.5, 0.5, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, // top-left
+		0.5, 0.5, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, // top-right
 		// third square
-		 0.5, 0.0, 0.0,  0.0, 0.0, 1.0,  0.0, 0.0, // bottom-left
-		 0.5, 0.0, 1.0,  0.0, 0.0, 1.0,  1.0, 0.0, // bottom-right
-		 0.5, 0.5, 0.0,  0.0, 0.0, 1.0,  0.0, 1.0, // top-left
-		 0.5, 0.5, 1.0,  0.0, 0.0, 1.0,  1.0, 1.0, // top-right
+		0.5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, // bottom-left
+		0.5, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, // bottom-right
+		0.5, 0.5, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, // top-left
+		0.5, 0.5, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, // top-right
 		// fourth square
-		-0.5, 0.0, 0.0,  0.0, 0.0, 1.0,  0.0, 0.0, // bottom-left
-		-0.5, 0.0, 1.0,  0.0, 0.0, 1.0,  1.0, 0.0, // bottom-right
-		-0.5, 0.5, 0.0,  0.0, 0.0, 1.0,  0.0, 1.0, // top-left
-		-0.5, 0.5, 1.0,  0.0, 0.0, 1.0,  1.0, 1.0, // top-right
+		-0.5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, // bottom-left
+		-0.5, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, // bottom-right
+		-0.5, 0.5, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, // top-left
+		-0.5, 0.5, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, // top-right
 		// fifth square
-		-0.5, 0.5, 0.0,  0.0, 0.0, 1.0,  0.0, 0.0, // bottom-left
-		-0.5, 0.5, 1.0,  0.0, 0.0, 1.0,  1.0, 0.0, // bottom-right
-		 0.5, 0.5, 0.0,  0.0, 0.0, 1.0,  0.0, 1.0, // top-left
-		 0.5, 0.5, 1.0,  0.0, 0.0, 1.0,  1.0, 1.0, // top-right
+		-0.5, 0.5, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, // bottom-left
+		-0.5, 0.5, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, // bottom-right
+		0.5, 0.5, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, // top-left
+		0.5, 0.5, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, // top-right
 		// sixth square
-		-0.5, 0.0, 0.0,  0.0, 0.0, 1.0,  0.0, 0.0, // bottom-left
-		-0.5, 0.0, 1.0,  0.0, 0.0, 1.0,  1.0, 0.0, // bottom-right
-		 0.5, 0.0, 0.0,  0.0, 0.0, 1.0,  0.0, 1.0, // top-left
-		 0.5, 0.0, 1.0,  0.0, 0.0, 1.0,  1.0, 1.0, // top-right
+		-0.5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, // bottom-left
+		-0.5, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, // bottom-right
+		0.5, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, // top-left
+		0.5, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, // top-right
 	}
-	INDICES = []uint32{
+	indices = []uint32{
 		// first square
 		0, 1, 2, // first triangle
 		1, 2, 3, // second triangle
@@ -66,8 +67,8 @@ var (
 		20, 21, 22,
 		21, 22, 23,
 	}
-	CUBE_POSITIONS = []mgl32.Vec3{
-		mgl32.Vec3{0.0 ,0.0, 0.0},
+	cubePositions = []mgl32.Vec3{
+		mgl32.Vec3{0.0, 0.0, 0.0},
 		mgl32.Vec3{2.0, 5.0, -15.0},
 		mgl32.Vec3{-1.5, -2.2, -2.5},
 		mgl32.Vec3{-3.8, -2.0, -12.3},
@@ -78,6 +79,25 @@ var (
 		mgl32.Vec3{1.5, 0.2, -1.5},
 		mgl32.Vec3{-1.3, 1.0, -1.5},
 	}
+
+	cameraPos   = mgl32.Vec3{0.0, 0.0, 3.0}
+	cameraFront = mgl32.Vec3{0.0, 0.0, -1.0}
+	cameraUp    = mgl32.Vec3{0.0, 1.0, 0.0}
+
+	deltaTime float32 = 0.0
+	lastFrame float32 = 0.0
+
+	yaw float32 = -90.0
+	pitch float32 = 0.0
+
+	lastX float32 = WIDTH / 2
+	lastY float32 = HEIGHT / 2
+	firstMouse = true
+)
+
+const (
+	WIDTH  = 600
+	HEIGHT = 400
 )
 
 func init() {
@@ -110,7 +130,56 @@ func compileShader(shaderSrc string, shaderType uint32) uint32 {
 	return shader
 }
 
-func createProgram() uint32 {
+func main() {
+	if err := glfw.Init(); err != nil {
+		panic(err)
+	}
+	defer glfw.Terminate()
+	glfw.WindowHint(glfw.ContextVersionMajor, 3)
+	glfw.WindowHint(glfw.ContextVersionMinor, 3)
+	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCompatProfile)
+
+	window, err := glfw.CreateWindow(WIDTH, HEIGHT, "heat rendering engine", nil, nil)
+	if err != nil {
+		panic(err)
+	}
+	window.MakeContextCurrent()
+	window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
+	window.SetCursorPosCallback(func(window *glfw.Window, xPos float64, yPos float64) {
+		if firstMouse {
+			lastX = float32(xPos)
+			lastY = float32(yPos)
+			firstMouse = false
+		}
+		xOffset := float32(xPos) - lastX
+		yOffset := lastY - float32(yPos)
+		lastX = float32(xPos)
+		lastY = float32(yPos)
+
+		var sensitivity float32 = 0.1
+		xOffset *= sensitivity
+		yOffset *= sensitivity
+
+		yaw += float32(xOffset)
+		pitch += float32(yOffset)
+
+		if pitch > 89.0 {
+			pitch = 89.0
+		}
+		if pitch < -89.0 {
+			pitch = -89.0
+		}
+
+		direction := mgl32.Vec3{}
+		direction[0] = float32(math.Cos(float64(mgl32.DegToRad(yaw))) * math.Cos(float64(mgl32.DegToRad(pitch))))
+		direction[1] = float32(math.Sin(float64(mgl32.DegToRad(pitch))))
+		direction[2] = float32(math.Sin(float64(mgl32.DegToRad(yaw))) * math.Cos(float64(mgl32.DegToRad(pitch))))
+		cameraFront = cameraFront.Add(direction).Normalize()
+	})
+	if err := gl.Init(); err != nil {
+		panic(err)
+	}
+
 	vShader := compileShader(readFile("assets/shader/basic_trianglev.glsl"), gl.VERTEX_SHADER)
 	fShader := compileShader(readFile("assets/shader/basic_trianglef.glsl"), gl.FRAGMENT_SHADER)
 	program := gl.CreateProgram()
@@ -120,22 +189,7 @@ func createProgram() uint32 {
 	gl.UseProgram(program)
 	gl.DeleteShader(vShader)
 	gl.DeleteShader(fShader)
-	return program
-}
 
-func initGlfw() *glfw.Window {
-	if err := glfw.Init(); err != nil {
-		panic(err)
-	}
-	window, err := glfw.CreateWindow(600, 400, "heat rendering engine", nil, nil)
-	if err != nil {
-		panic(err)
-	}
-	window.MakeContextCurrent()
-	return window
-}
-
-func initVao() (uint32, uint32, uint32) {
 	var vbo, vao, ebo, texture uint32
 	gl.GenBuffers(1, &vbo)
 	gl.GenBuffers(1, &ebo)
@@ -168,8 +222,8 @@ func initVao() (uint32, uint32, uint32) {
 	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, int32(rgba.Rect.Size().X), int32(rgba.Rect.Size().Y), 0, gl.RGBA, gl.UNSIGNED_BYTE, gl.Ptr(rgba.Pix))
 	gl.GenerateMipmap(gl.TEXTURE_2D)
 
-	gl.BufferData(gl.ARRAY_BUFFER, len(VERTICES)*4, gl.Ptr(VERTICES), gl.STATIC_DRAW)
-	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(INDICES)*4, gl.Ptr(INDICES), gl.STATIC_DRAW)
+	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*4, gl.Ptr(vertices), gl.STATIC_DRAW)
+	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(indices)*4, gl.Ptr(indices), gl.STATIC_DRAW)
 
 	gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, int32(8*4), uintptr(0))
 	gl.EnableVertexAttribArray(0)
@@ -179,66 +233,64 @@ func initVao() (uint32, uint32, uint32) {
 
 	gl.VertexAttribPointerWithOffset(2, 2, gl.FLOAT, false, int32(8*4), uintptr(6*4))
 	gl.EnableVertexAttribArray(2)
-	return vao, ebo, texture
-}
 
-func drawBuffer(vao uint32, program uint32, ebo uint32, texture uint32) {
-	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-
-	gl.UseProgram(program)
-	gl.BindVertexArray(vao)
-	
-	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_2D, texture)
-	
-	for i := range CUBE_POSITIONS {
-		model := mgl32.Ident4()
-		modelLocation := gl.GetUniformLocation(program, gl.Str("model\x00"))
-		model = model.Mul4(mgl32.Translate3D(CUBE_POSITIONS[i][0], CUBE_POSITIONS[i][1], CUBE_POSITIONS[i][2]))
-		angle := float32(i * 20.0)
-		model = model.Mul4(mgl32.HomogRotate3D(mgl32.DegToRad(angle), mgl32.Vec3{0.5, 1.0, 0.0}))
-		gl.UniformMatrix4fv(modelLocation, 1, false, &model[0])
-
-		gl.DrawElements(gl.TRIANGLES, 6*6, gl.UNSIGNED_INT, gl.Ptr(uintptr(0)))
-	}
-}
-
-func redraw(window *glfw.Window) {
-	window.SwapBuffers()
-	glfw.PollEvents()
-}
-
-func handleInput(window *glfw.Window) {
-	if window.GetKey(glfw.KeyEscape) == glfw.Press {
-		window.SetShouldClose(true)
-	}
-}
-
-func main() {
-	window := initGlfw()
-	defer glfw.Terminate()
-	if err := gl.Init(); err != nil {
-		panic(err)
-	}
-
-	program := createProgram()
-	vao, ebo, texture := initVao()
-
-	projection := mgl32.Perspective(mgl32.DegToRad(90.0), 600/400, 0.1, 100.0)
+	projection := mgl32.Perspective(mgl32.DegToRad(90.0), WIDTH/HEIGHT, 0.1, 100.0)
 	projectionLocation := gl.GetUniformLocation(program, gl.Str("projection\x00"))
 	gl.UniformMatrix4fv(projectionLocation, 1, false, &projection[0])
-	
-	view := mgl32.LookAt(0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0)
-	viewLocation := gl.GetUniformLocation(program, gl.Str("view\x00"))
-	gl.UniformMatrix4fv(viewLocation, 1, false, &view[0])
 
 	gl.Enable(gl.DEPTH_TEST)
 
 	for !window.ShouldClose() {
-		handleInput(window)
+		currentFrame := float32(glfw.GetTime())
+		deltaTime = currentFrame - lastFrame
+		lastFrame = currentFrame
 
-		drawBuffer(vao, program, ebo, texture)
+		cameraSpeed := 2.5 * deltaTime
 
-		redraw(window)
+		if window.GetKey(glfw.KeyEscape) == glfw.Press {
+			window.SetShouldClose(true)
+		}
+
+		if window.GetKey(glfw.KeyW) == glfw.Press {
+			cameraPos = cameraPos.Add(cameraFront.Mul(cameraSpeed))
+		}
+
+		if window.GetKey(glfw.KeyS) == glfw.Press {
+			cameraPos = cameraPos.Sub(cameraFront.Mul(cameraSpeed))
+		}
+
+		if window.GetKey(glfw.KeyA) == glfw.Press {
+			cameraPos = cameraPos.Sub(cameraFront.Cross(cameraUp).Normalize().Mul(cameraSpeed))
+		}
+
+		if window.GetKey(glfw.KeyD) == glfw.Press {
+			cameraPos = cameraPos.Add(cameraFront.Cross(cameraUp).Normalize().Mul(cameraSpeed))
+		}
+
+		view := mgl32.LookAt(cameraPos[0], cameraPos[1], cameraPos[2], cameraPos[0]+cameraFront[0], cameraPos[1]+cameraFront[1], cameraPos[2]+cameraFront[2], cameraUp[0], cameraUp[1], cameraUp[2])
+		viewLocation := gl.GetUniformLocation(program, gl.Str("view\x00"))
+		gl.UniformMatrix4fv(viewLocation, 1, false, &view[0])
+
+		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+		gl.UseProgram(program)
+		gl.BindVertexArray(vao)
+
+		gl.ActiveTexture(gl.TEXTURE0)
+		gl.BindTexture(gl.TEXTURE_2D, texture)
+
+		for i := range cubePositions {
+			model := mgl32.Ident4()
+			modelLocation := gl.GetUniformLocation(program, gl.Str("model\x00"))
+			model = model.Mul4(mgl32.Translate3D(cubePositions[i][0], cubePositions[i][1], cubePositions[i][2]))
+			angle := float32(i * 20.0)
+			model = model.Mul4(mgl32.HomogRotate3D(mgl32.DegToRad(angle), mgl32.Vec3{0.5, 1.0, 0.0}))
+			gl.UniformMatrix4fv(modelLocation, 1, false, &model[0])
+
+			gl.DrawElements(gl.TRIANGLES, 6*6, gl.UNSIGNED_INT, gl.Ptr(uintptr(0)))
+		}
+
+		window.SwapBuffers()
+		glfw.PollEvents()
 	}
 }
