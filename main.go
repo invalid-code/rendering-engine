@@ -68,7 +68,7 @@ var (
 		21, 22, 23,
 	}
 	cubePositions = []mgl32.Vec3{
-		mgl32.Vec3{0.0, 0.0, 0.0},
+		{0.0, 0.0, 0.0},
 		mgl32.Vec3{2.0, 5.0, -15.0},
 		mgl32.Vec3{-1.5, -2.2, -2.5},
 		mgl32.Vec3{-3.8, -2.0, -12.3},
@@ -93,6 +93,8 @@ var (
 	lastX float32 = WIDTH / 2
 	lastY float32 = HEIGHT / 2
 	firstMouse = true
+
+	fov float32 = 45.0
 )
 
 const (
@@ -145,6 +147,15 @@ func main() {
 	}
 	window.MakeContextCurrent()
 	window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
+	window.SetScrollCallback(func(window *glfw.Window, xOffset float64, yOffset float64) {
+		fov -= float32(yOffset)
+		if fov < 1.0 {
+			fov = 1.0
+		}
+		if fov > 45.0 {
+			fov = 45.0
+		}
+	})
 	window.SetCursorPosCallback(func(window *glfw.Window, xPos float64, yPos float64) {
 		if firstMouse {
 			lastX = float32(xPos)
@@ -186,9 +197,8 @@ func main() {
 	gl.AttachShader(program, vShader)
 	gl.AttachShader(program, fShader)
 	gl.LinkProgram(program)
-	gl.UseProgram(program)
-	gl.DeleteShader(vShader)
-	gl.DeleteShader(fShader)
+	defer gl.DeleteShader(vShader)
+	defer gl.DeleteShader(fShader)
 
 	var vbo, vao, ebo, texture uint32
 	gl.GenBuffers(1, &vbo)
@@ -234,10 +244,6 @@ func main() {
 	gl.VertexAttribPointerWithOffset(2, 2, gl.FLOAT, false, int32(8*4), uintptr(6*4))
 	gl.EnableVertexAttribArray(2)
 
-	projection := mgl32.Perspective(mgl32.DegToRad(90.0), WIDTH/HEIGHT, 0.1, 100.0)
-	projectionLocation := gl.GetUniformLocation(program, gl.Str("projection\x00"))
-	gl.UniformMatrix4fv(projectionLocation, 1, false, &projection[0])
-
 	gl.Enable(gl.DEPTH_TEST)
 
 	for !window.ShouldClose() {
@@ -267,14 +273,18 @@ func main() {
 			cameraPos = cameraPos.Add(cameraFront.Cross(cameraUp).Normalize().Mul(cameraSpeed))
 		}
 
-		view := mgl32.LookAt(cameraPos[0], cameraPos[1], cameraPos[2], cameraPos[0]+cameraFront[0], cameraPos[1]+cameraFront[1], cameraPos[2]+cameraFront[2], cameraUp[0], cameraUp[1], cameraUp[2])
-		viewLocation := gl.GetUniformLocation(program, gl.Str("view\x00"))
-		gl.UniformMatrix4fv(viewLocation, 1, false, &view[0])
-
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		gl.UseProgram(program)
 		gl.BindVertexArray(vao)
+
+		projection := mgl32.Perspective(mgl32.DegToRad(fov), WIDTH/HEIGHT, 0.1, 100.0)
+		projectionLocation := gl.GetUniformLocation(program, gl.Str("projection\x00"))
+		gl.UniformMatrix4fv(projectionLocation, 1, false, &projection[0])
+
+		view := mgl32.LookAt(cameraPos[0], cameraPos[1], cameraPos[2], cameraPos[0]+cameraFront[0], cameraPos[1]+cameraFront[1], cameraPos[2]+cameraFront[2], cameraUp[0], cameraUp[1], cameraUp[2])
+		viewLocation := gl.GetUniformLocation(program, gl.Str("view\x00"))
+		gl.UniformMatrix4fv(viewLocation, 1, false, &view[0])
 
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, texture)
