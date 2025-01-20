@@ -8,6 +8,6 @@ require (
 )
 
 require (
-	github.com/go-gl/mathgl v1.1.0 // indirect
+	github.com/go-gl/mathgl v1.2.0 // indirect
 	golang.org/x/image v0.14.0 // indirect
 )

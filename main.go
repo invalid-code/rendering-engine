@@ -1,344 +1,331 @@
 package main
 
 import (
-	"image"
-	"image/draw"
-	_ "image/png"
 	"log"
 	"math"
-	"os"
 	"runtime"
+	"unsafe"
 
-	"github.com/go-gl/gl/v3.3-compatibility/gl"
+	"github.com/go-gl/gl/v3.3-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 )
 
+const (
+	WIDTH  = 685
+	HEIGHT = 500
+)
+
 var (
 	vertices = []float32{
-		// left top front(0)
-		-0.5,  0.5,  0.5,
-		// right top front(1)
-		 0.5,  0.5,  0.5,
-		// left bottom front(2)
-		-0.5, -0.5,  0.5,
-		// right bottom front(3)
-		 0.5, -0.5,  0.5,
-		// left top back(4)
-		-0.5,  0.5, -0.5,
-		// right top back(5)
-		 0.5,  0.5, -0.5,
-		// left bottom back(6)
+		// left top front 0
+		-0.5, 0.5, 0.5,
+		// right top front 1
+		0.5, 0.5, 0.5,
+		// left bottom front 2
+		-0.5, -0.5, 0.5,
+		// right bottom front 3
+		0.5, -0.5, 0.5,
+		// left bottom back 4
+		-0.5, 0.5, -0.5,
+		// right bottom back 5
+		0.5, 0.5, -0.5,
+		// right top back 6
 		-0.5, -0.5, -0.5,
-		// right bottom back(7)
-		 0.5, -0.5, -0.5,
+		// left top back 7
+		0.5, -0.5, -0.5,
 	}
-	light_vertices = []float32{
-		
-	}
-	indices = []uint32{
+	indices = []int32{
 		// front
-		2, 3, 1,
-		1, 0, 2,
-		// top
-		0, 1, 5,
-		5, 4, 0,
-		// right
-		3, 7, 5,
-		5, 1, 3,
+		0, 2, 3,
+		3, 1, 0,
 		// back
-		7, 6, 4,
-		4, 5, 7,
-		// bottom
-		7, 6, 2,
-		2, 3, 7,
+		5, 7, 6,
+		6, 4, 5,
+		// right
+		1, 3, 7,
+		7, 5, 1,
 		// left
-		6, 2, 0,
-		0, 4, 6,
+		4, 6, 2,
+		2, 0, 4,
+		// top
+		4, 0, 1,
+		1, 5, 4,
+		// bottom
+		7, 3, 2,
+		2, 6, 7,
 	}
-	cubePositions = []mgl32.Vec3{
-		{0.0, 0.0, 0.0},
-		{2.0, 5.0, -15.0},
-		{-1.5, -2.2, -2.5},
-		{-3.8, -2.0, -12.3},
-		{2.4, -0.4, -3.5},
-		{-1.7, 3.0, -7.5},
-		{1.3, -2.0, -2.5},
-		{1.5, 2.0, -2.5},
-		{1.5, 0.2, -1.5},
-		{-1.3, 1.0, -1.5},
-	}
-
-	cameraPos   = mgl32.Vec3{0.0, 0.0, 3.0}
-	cameraFront = mgl32.Vec3{0.0, 0.0, -1.0}
-	cameraUp    = mgl32.Vec3{0.0, 1.0, 0.0}
-
 	deltaTime float32 = 0.0
 	lastFrame float32 = 0.0
-
-	yaw   float32 = -90.0
-	pitch float32 = 0.0
-
-	lastX      float32 = WIDTH / 2
-	lastY      float32 = HEIGHT / 2
-	firstMouse         = true
-
-	fov float32 = 45.0
+	lastX     float32 = 400
+	lastY     float32 = 300
 )
 
-const (
-	WIDTH  = 600
-	HEIGHT = 400
-)
+type Camera struct {
+	pos        mgl32.Vec3
+	direction  mgl32.Vec3
+	up         mgl32.Vec3
+	fov        float32
+	yaw        float32
+	pitch      float32
+	speed      float32
+	firstMouse bool
+}
+
+func newCamera() Camera {
+	camera := Camera{
+		pos:       mgl32.Vec3{0, 0, 3.0},
+		direction: mgl32.Vec3{0, 0, -1.0},
+		up:        mgl32.Vec3{0, 1.0, 0},
+		fov:       45.0,
+		yaw:       -90.0,
+		pitch:     0,
+		speed:     0,
+		firstMouse: true,
+	}
+	return camera
+}
+
+func (camera *Camera) zoom(zoomVal float32) {
+	camera.fov = zoomVal
+	if camera.fov < 1.0 {
+		camera.fov = 1.0
+	}
+	if camera.fov > 45.0 {
+		camera.fov = 45.0
+	}
+}
+
+func (camera *Camera) cameraTarget() mgl32.Vec3 {
+	return camera.pos.Add(camera.direction)
+}
+
+func (camera *Camera) calculateDirection(xPos float32, yPos float32) {
+	if camera.firstMouse {
+		lastX = xPos
+		lastY = yPos
+		camera.firstMouse = false
+	}
+	xOffset, yOffset := xPos-lastX, lastY-yPos
+	lastX = xPos
+	lastY = yPos
+
+	const sensitivity float32 = 0.1
+	xOffset *= sensitivity
+	yOffset *= sensitivity
+
+	camera.yaw += xOffset
+	camera.pitch += yOffset
+
+	if camera.pitch > 89.0 {
+		camera.pitch = 89.0
+	}
+	if camera.pitch < -89.0 {
+		camera.pitch = -89.0
+	}
+	var direction mgl32.Vec3
+	direction[0] = float32(math.Cos(float64(mgl32.DegToRad(camera.yaw))) * math.Cos(float64(mgl32.DegToRad(camera.pitch))))
+	direction[1] = float32(math.Sin(float64(mgl32.DegToRad(camera.pitch))))
+	direction[2] = float32(math.Sin(float64(mgl32.DegToRad(camera.yaw))) * math.Cos(float64(mgl32.DegToRad(camera.pitch))))
+	camera.direction = direction.Normalize()
+}
+
+func (camera *Camera) calculateSpeed() {
+	camera.speed = 2.5 * deltaTime
+}
+
+func (camera *Camera) moveForward() {
+	camera.pos = camera.pos.Add(camera.direction.Mul(camera.speed))
+}
+
+func (camera *Camera) moveBackward() {
+	camera.pos = camera.pos.Sub(camera.direction.Mul(camera.speed))
+}
+
+func (camera *Camera) moveRight() {
+	camera.pos = camera.pos.Add(camera.direction.Cross(camera.up).Normalize().Mul(camera.speed))
+}
+
+func (camera *Camera) moveLeft() {
+	camera.pos = camera.pos.Sub(camera.direction.Cross(camera.up).Normalize().Mul(camera.speed))
+}
+
+func (camera *Camera) moveUp() {
+	camera.pos = camera.pos.Add(camera.up.Mul(camera.speed))
+}
+
+func (camera *Camera) moveDown() {
+	camera.pos = camera.pos.Sub(camera.up.Mul(camera.speed))
+}
+
+type ShaderProgram struct {
+	program uint32
+}
+
+func newShaderProgram(vertShaderPath string, fragShaderPath string) ShaderProgram {
+	shaderPaths := []string{vertShaderPath, fragShaderPath}
+	shaderType := []uint32{gl.VERTEX_SHADER, gl.FRAGMENT_SHADER}
+	compiledShader := [2]uint32{}
+	for i := 0; i < len(shaderPaths); i++ {
+		compiledShader[i] = compileShader(shaderPaths[i], shaderType[i])
+	}
+	shaderProgram := ShaderProgram{
+		program: gl.CreateProgram(),
+	}
+	for i := 0; i < len(compiledShader); i++ {
+		gl.AttachShader(shaderProgram.program, compiledShader[i])
+	}
+	gl.LinkProgram(shaderProgram.program)
+	var success int32
+	infoLog := gl.Str(string(make([]byte, 512)) + "\x00")
+	gl.GetProgramiv(shaderProgram.program, gl.LINK_STATUS, &success)
+	if success != 1 {
+		gl.GetProgramInfoLog(shaderProgram.program, 512, nil, infoLog)
+		log.Fatalln(gl.GoStr(infoLog))
+	}
+	for i := 0; i < len(compiledShader); i++ {
+		gl.DeleteShader(compiledShader[i])
+	}
+	return shaderProgram
+}
+
+func compileShader(path string, shaderType uint32) uint32 {
+	var shader uint32
+	shaderSrc := readFile(path)
+	cStr, freeFn := gl.Strs(shaderSrc + "\x00")
+	defer freeFn()
+	shader = gl.CreateShader(shaderType)
+	gl.ShaderSource(shader, 1, cStr, nil)
+	gl.CompileShader(shader)
+	var success int32
+	infoLog := gl.Str(string(make([]byte, 512)) + "\x00")
+	gl.GetShaderiv(shader, gl.COMPILE_STATUS, &success)
+	if success != 1 {
+		gl.GetShaderInfoLog(shader, 512, nil, infoLog)
+		log.Fatalln(path, gl.GoStr(infoLog))
+	}
+	return shader
+}
+
+func (shaderProgram *ShaderProgram) setMat4(name string, uniformData mgl32.Mat4) {
+	gl.UseProgram(shaderProgram.program)
+	uniformName := gl.Str(name + "\x00")
+	uniformLoc := gl.GetUniformLocation(shaderProgram.program, uniformName)
+	gl.UniformMatrix4fv(uniformLoc, 1, false, &uniformData[0])
+	gl.UseProgram(0)
+}
+
+func (shaderProgram *ShaderProgram) activate() {
+	gl.UseProgram(shaderProgram.program)
+}
 
 func init() {
 	runtime.LockOSThread()
 }
 
-type Program struct {
-	vShader uint32
-	fShader uint32
-	program uint32
+func createVAO() uint32 {
+	var vbo, ebo, vao uint32
+	gl.GenVertexArrays(1, &vao)
+	gl.BindVertexArray(vao)
+
+	gl.GenBuffers(1, &vbo)
+	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
+	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*int(unsafe.Sizeof(vertices[0])), gl.Ptr(vertices), gl.STATIC_DRAW)
+
+	gl.GenBuffers(1, &ebo)
+	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo)
+	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(indices)*int(unsafe.Sizeof(indices[0])), gl.Ptr(indices), gl.STATIC_DRAW)
+
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 3*int32(unsafe.Sizeof(float32(1.0))), gl.Ptr(uintptr(0)))
+	gl.EnableVertexAttribArray(0)
+
+	gl.BindVertexArray(0)
+	return vao
 }
 
-func newShaderProgram(vShaderPath string, fShaderPath string) *Program {
-	program := new(Program)
-	program.vShader = program.compileShader(readFile(vShaderPath), gl.VERTEX_SHADER)
-	program.fShader = program.compileShader(readFile(fShaderPath), gl.FRAGMENT_SHADER)
-	program.program = gl.CreateProgram()
-	gl.AttachShader(program.program, program.vShader)
-	gl.AttachShader(program.program, program.fShader)
-	gl.LinkProgram(program.program)
-	return program
-}
-
-func (program *Program) deleteShader() {
-	gl.DeleteShader(program.vShader)
-	gl.DeleteShader(program.fShader)
-}
-
-func (program *Program) activate() {
-	gl.UseProgram(program.program)
-}
-
-func (program *Program) setMat4(value mgl32.Mat4, name string) {
-	location := gl.GetUniformLocation(program.program, gl.Str(name+"\x00"))
-	gl.UniformMatrix4fv(location, 1, false, &value[0])
-}
-
-func (program *Program) compileShader(shaderSrc string, shaderType uint32) uint32 {
-	shader := gl.CreateShader(shaderType)
-	cstring, free := gl.Strs(shaderSrc)
-	gl.ShaderSource(shader, 1, cstring, nil)
-	free()
-	gl.CompileShader(shader)
-
-	var compileStatus int32
-	var shaderLog uint8
-	gl.GetShaderiv(shader, gl.COMPILE_STATUS, &compileStatus)
-	if compileStatus != gl.TRUE {
-		gl.GetShaderInfoLog(shader, 255, nil, &shaderLog)
-		log.Fatalf("\n%v\n", gl.GoStr(&shaderLog))
+func processInput(window *glfw.Window, camera *Camera) {
+	camera.calculateSpeed()
+	if window.GetKey(glfw.KeyEscape) == glfw.Press {
+		window.SetShouldClose(true)
 	}
-
-	return shader
-}
-
-type Window struct {
-	window *glfw.Window
-}
-
-func newWindow() *Window {
-	window := new(Window)
-	glfwWindow, err := glfw.CreateWindow(WIDTH, HEIGHT, "heat rendering engine", nil, nil)
-	if err != nil {
-		panic(err)
+	if window.GetKey(glfw.KeyW) == glfw.Press {
+		camera.moveForward()
 	}
-	glfwWindow.MakeContextCurrent()
-	glfwWindow.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
-	glfwWindow.SetScrollCallback(func(window *glfw.Window, xOffset float64, yOffset float64) {
-		fov -= float32(yOffset)
-		if fov < 1.0 {
-			fov = 1.0
-		}
-		if fov > 45.0 {
-			fov = 45.0
-		}
-	})
-	glfwWindow.SetCursorPosCallback(func(window *glfw.Window, xPos float64, yPos float64) {
-		if firstMouse {
-			lastX = float32(xPos)
-			lastY = float32(yPos)
-			firstMouse = false
-		}
-		xOffset := float32(xPos) - lastX
-		yOffset := lastY - float32(yPos)
-		lastX = float32(xPos)
-		lastY = float32(yPos)
-
-		var sensitivity float32 = 0.1
-		xOffset *= sensitivity
-		yOffset *= sensitivity
-
-		yaw += float32(xOffset)
-		pitch += float32(yOffset)
-
-		if pitch > 89.0 {
-			pitch = 89.0
-		}
-		if pitch < -89.0 {
-			pitch = -89.0
-		}
-
-		direction := mgl32.Vec3{}
-		direction[0] = float32(math.Cos(float64(mgl32.DegToRad(yaw))) * math.Cos(float64(mgl32.DegToRad(pitch))))
-		direction[1] = float32(math.Sin(float64(mgl32.DegToRad(pitch))))
-		direction[2] = float32(math.Sin(float64(mgl32.DegToRad(yaw))) * math.Cos(float64(mgl32.DegToRad(pitch))))
-		cameraFront = cameraFront.Add(direction).Normalize()
-	})
-	window.window = glfwWindow
-	return window
-}
-
-func (window *Window) mainLoop(f func()) {
-	glfwWindow := window.getGlfwWindow()
-	for !glfwWindow.ShouldClose() {
-		currentFrame := float32(glfw.GetTime())
-		deltaTime = currentFrame - lastFrame
-		lastFrame = currentFrame
-
-		cameraSpeed := 2.5 * deltaTime
-
-		if glfwWindow.GetKey(glfw.KeyEscape) == glfw.Press {
-			glfwWindow.SetShouldClose(true)
-		}
-
-		if glfwWindow.GetKey(glfw.KeyW) == glfw.Press {
-			cameraPos = cameraPos.Add(cameraFront.Mul(cameraSpeed))
-		}
-
-		if glfwWindow.GetKey(glfw.KeyS) == glfw.Press {
-			cameraPos = cameraPos.Sub(cameraFront.Mul(cameraSpeed))
-		}
-
-		if glfwWindow.GetKey(glfw.KeyA) == glfw.Press {
-			cameraPos = cameraPos.Sub(cameraFront.Cross(cameraUp).Normalize().Mul(cameraSpeed))
-		}
-
-		if glfwWindow.GetKey(glfw.KeyD) == glfw.Press {
-			cameraPos = cameraPos.Add(cameraFront.Cross(cameraUp).Normalize().Mul(cameraSpeed))
-		}
-
-		f()
-
-		glfwWindow.SwapBuffers()
-		glfw.PollEvents()
+	if window.GetKey(glfw.KeyS) == glfw.Press {
+		camera.moveBackward()
 	}
-}
-
-func (window *Window) getGlfwWindow() *glfw.Window {
-	return window.window
-}
-
-func readFile(path string) string {
-	file, err := os.ReadFile(path)
-	if err != nil {
-		panic(err)
+	if window.GetKey(glfw.KeyA) == glfw.Press {
+		camera.moveLeft()
 	}
-	return string(file) + "\x00"
+	if window.GetKey(glfw.KeyD) == glfw.Press {
+		camera.moveRight()
+	}
+	if window.GetKey(glfw.KeySpace) == glfw.Press {
+		camera.moveUp()
+	}
+	if window.GetKey(glfw.KeyLeftShift) == glfw.Press {
+		camera.moveDown()
+	}
 }
 
 func main() {
-	if err := glfw.Init(); err != nil {
-		panic(err)
+	err := glfw.Init()
+	if err != nil {
+		log.Fatalln(err)
 	}
 	defer glfw.Terminate()
 	glfw.WindowHint(glfw.ContextVersionMajor, 3)
 	glfw.WindowHint(glfw.ContextVersionMinor, 3)
-	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCompatProfile)
+	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 
-	window := newWindow()
-
-	if err := gl.Init(); err != nil {
-		panic(err)
-	}
-
-	program := newShaderProgram("assets/shader/basic_trianglev.glsl", "assets/shader/basic_trianglef.glsl")
-	defer program.deleteShader()
-
-	var verticesBufferObj, colorBufferObj, texCoordsBufferObj, vao, ebo, texture uint32
-	gl.GenBuffers(1, &colorBufferObj)
-	gl.GenBuffers(1, &texCoordsBufferObj)
-	gl.GenBuffers(1, &ebo)
-	
-	gl.GenVertexArrays(1, &vao)
-	gl.BindVertexArray(vao)
-	
-	gl.GenTextures(gl.TEXTURE_2D, &texture)
-
-	gl.BindBuffer(gl.ARRAY_BUFFER, verticesBufferObj)
-	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo)
-	gl.BindTexture(gl.TEXTURE_2D, texture)
-
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-
-	f, err := os.Open("assets/texture/Brickwall2_Texture.png")
+	window, err := glfw.CreateWindow(WIDTH, HEIGHT, "heat rendering engine", nil, nil)
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
-	img, _, err := image.Decode(f)
+	window.MakeContextCurrent()
+
+	err = gl.Init()
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
-	rgba := image.NewRGBA(img.Bounds())
-	if rgba.Stride != rgba.Rect.Size().X*4 {
-		panic("unsupported stride")
-	}
-	draw.Draw(rgba, rgba.Bounds(), img, image.Point{0, 0}, draw.Src)
-	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, int32(rgba.Rect.Size().X), int32(rgba.Rect.Size().Y), 0, gl.RGBA, gl.UNSIGNED_BYTE, gl.Ptr(rgba.Pix))
-	gl.GenerateMipmap(gl.TEXTURE_2D)
-
-	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*4, gl.Ptr(vertices), gl.STATIC_DRAW)
-	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(indices)*4, gl.Ptr(indices), gl.STATIC_DRAW)
-
-	gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, int32(8*4), uintptr(0))
-	gl.EnableVertexAttribArray(0)
-
-	gl.VertexAttribPointerWithOffset(1, 3, gl.FLOAT, false, int32(8*4), uintptr(3*4))
-	gl.EnableVertexAttribArray(1)
-
-	gl.VertexAttribPointerWithOffset(2, 2, gl.FLOAT, false, int32(8*4), uintptr(6*4))
-	gl.EnableVertexAttribArray(2)
-
+	window.SetFramebufferSizeCallback(func(w *glfw.Window, width int, height int) {
+		gl.Viewport(0, 0, int32(width), int32(height))
+	})
+	window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
+	camera := newCamera()
+	window.SetCursorPosCallback(func(w *glfw.Window, xPos float64, yPos float64) {
+		camera.calculateDirection(float32(xPos), float32(yPos))
+	})
+	window.SetScrollCallback(func(w *glfw.Window, xOff float64, yOff float64) {
+		camera.zoom(float32(yOff))
+	})
 	gl.Enable(gl.DEPTH_TEST)
-	gl.Enable(gl.CULL_FACE)
+	// gl.PolygonMode(gl.FRONT_AND_BACK, gl.LINE)
 
-	window.mainLoop(func() {
+	vao := createVAO()
+	shaderProgram := newShaderProgram("assets/shader/basic_trianglev.glsl", "assets/shader/basic_trianglef.glsl")
+
+	model := mgl32.Ident4()
+	shaderProgram.setMat4("model", model)
+
+	for !window.ShouldClose() {
+		currentFrame := float32(glfw.GetTime())
+		deltaTime = currentFrame - lastFrame
+		lastFrame = currentFrame
+		processInput(window, &camera)
+
+		gl.ClearColor(1.0, 1.0, 1.0, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		program.activate()
+		view := mgl32.LookAtV(camera.pos, camera.cameraTarget(), camera.up)
+		shaderProgram.setMat4("view", view)
+		projection := mgl32.Perspective(mgl32.DegToRad(camera.fov), float32(WIDTH)/float32(HEIGHT), 0.1, 100.0)
+		shaderProgram.setMat4("projection", projection)
+		shaderProgram.activate()
 		gl.BindVertexArray(vao)
+		gl.DrawElements(gl.TRIANGLES, int32(len(indices)), gl.UNSIGNED_INT, gl.Ptr(uintptr(0)))
 
-		projection := mgl32.Perspective(mgl32.DegToRad(fov), WIDTH/HEIGHT, 0.1, 100.0)
-		program.setMat4(projection, "projection")
-
-		view := mgl32.LookAt(cameraPos[0], cameraPos[1], cameraPos[2], cameraPos[0]+cameraFront[0], cameraPos[1]+cameraFront[1], cameraPos[2]+cameraFront[2], cameraUp[0], cameraUp[1], cameraUp[2])
-		program.setMat4(view, "view")
-
-		gl.ActiveTexture(gl.TEXTURE0)
-		gl.BindTexture(gl.TEXTURE_2D, texture)
-		
-		for i := range cubePositions {
-			model := mgl32.Ident4()
-			model = model.Mul4(mgl32.Translate3D(cubePositions[i][0], cubePositions[i][1], cubePositions[i][2]))
-			angle := float32(i * 20.0)
-			model = model.Mul4(mgl32.HomogRotate3D(mgl32.DegToRad(angle), mgl32.Vec3{0.5, 1.0, 0.0}))
-			program.setMat4(model, "model")
-
-			gl.DrawElements(gl.TRIANGLES, 6*6, gl.UNSIGNED_INT, gl.Ptr(uintptr(0)))
-		}
-	})
+		window.SwapBuffers()
+		glfw.PollEvents()
+	}
 }
