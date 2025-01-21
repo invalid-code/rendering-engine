@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"math"
 	"runtime"
@@ -58,23 +57,47 @@ var (
 	}
 	vertices = []float32{
 		// front
-		lightVertices[indices[0]*3], lightVertices[(indices[0]*3)+1], lightVertices[(indices[0]*3)+2], lightVertices[indices[1]*3], lightVertices[(indices[1]*3)+1], lightVertices[(indices[1]*3)+2], lightVertices[indices[2]*3], lightVertices[(indices[2]*3)+1], lightVertices[(indices[2]*3)+2],
-		lightVertices[indices[3]*3], lightVertices[(indices[3]*3)+1], lightVertices[(indices[3]*3)+2], lightVertices[indices[4]*3], lightVertices[(indices[4]*3)+1], lightVertices[(indices[4]*3)+2], lightVertices[indices[5]*3], lightVertices[(indices[5]*3)+1], lightVertices[(indices[5]*3)+2],
+		lightVertices[indices[0]*3], lightVertices[(indices[0]*3)+1], lightVertices[(indices[0]*3)+2], 0.0, 0.0, -1.0,
+		lightVertices[indices[1]*3], lightVertices[(indices[1]*3)+1], lightVertices[(indices[1]*3)+2], 0.0, 0.0, -1.0,
+		lightVertices[indices[2]*3], lightVertices[(indices[2]*3)+1], lightVertices[(indices[2]*3)+2], 0.0, 0.0, -1.0,
+		lightVertices[indices[3]*3], lightVertices[(indices[3]*3)+1], lightVertices[(indices[3]*3)+2], 0.0, 0.0, -1.0,
+		lightVertices[indices[4]*3], lightVertices[(indices[4]*3)+1], lightVertices[(indices[4]*3)+2], 0.0, 0.0, -1.0,
+		lightVertices[indices[5]*3], lightVertices[(indices[5]*3)+1], lightVertices[(indices[5]*3)+2], 0.0, 0.0, -1.0,
 		// back
-		lightVertices[indices[6]*3], lightVertices[(indices[6]*3)+1], lightVertices[(indices[6]*3)+2], lightVertices[indices[7]*3], lightVertices[(indices[7]*3)+1], lightVertices[(indices[7]*3)+2], lightVertices[indices[8]*3], lightVertices[(indices[8]*3)+1], lightVertices[(indices[8]*3)+2],
-		lightVertices[indices[9]*3], lightVertices[(indices[9]*3)+1], lightVertices[(indices[9]*3)+2], lightVertices[indices[10]*3], lightVertices[(indices[10]*3)+1], lightVertices[(indices[10]*3)+2], lightVertices[indices[11]*3], lightVertices[(indices[11]*3)+1], lightVertices[(indices[11]*3)+2],
+		lightVertices[indices[6]*3], lightVertices[(indices[6]*3)+1], lightVertices[(indices[6]*3)+2], 0.0, 0.0, 1.0,
+		lightVertices[indices[7]*3], lightVertices[(indices[7]*3)+1], lightVertices[(indices[7]*3)+2], 0.0, 0.0, 1.0,
+		lightVertices[indices[8]*3], lightVertices[(indices[8]*3)+1], lightVertices[(indices[8]*3)+2], 0.0, 0.0, 1.0,
+		lightVertices[indices[9]*3], lightVertices[(indices[9]*3)+1], lightVertices[(indices[9]*3)+2], 0.0, 0.0, 1.0,
+		lightVertices[indices[10]*3], lightVertices[(indices[10]*3)+1], lightVertices[(indices[10]*3)+2], 0.0, 0.0, 1.0,
+		lightVertices[indices[11]*3], lightVertices[(indices[11]*3)+1], lightVertices[(indices[11]*3)+2], 0.0, 0.0, 1.0,
 		// right
-		lightVertices[indices[12]*3], lightVertices[(indices[12]*3)+1], lightVertices[(indices[12]*3)+2], lightVertices[indices[13]*3], lightVertices[(indices[13]*3)+1], lightVertices[(indices[13]*3)+2], lightVertices[indices[14]*3], lightVertices[(indices[14]*3)+1], lightVertices[(indices[14]*3)+2],
-		lightVertices[indices[15]*3], lightVertices[(indices[15]*3)+1], lightVertices[(indices[15]*3)+2], lightVertices[indices[16]*3], lightVertices[(indices[16]*3)+1], lightVertices[(indices[16]*3)+2], lightVertices[indices[17]*3], lightVertices[(indices[17]*3)+1], lightVertices[(indices[17]*3)+2],
+		lightVertices[indices[12]*3], lightVertices[(indices[12]*3)+1], lightVertices[(indices[12]*3)+2], 1.0, 0.0, 0.0,
+		lightVertices[indices[13]*3], lightVertices[(indices[13]*3)+1], lightVertices[(indices[13]*3)+2], 1.0, 0.0, 0.0,
+		lightVertices[indices[14]*3], lightVertices[(indices[14]*3)+1], lightVertices[(indices[14]*3)+2], 1.0, 0.0, 0.0,
+		lightVertices[indices[15]*3], lightVertices[(indices[15]*3)+1], lightVertices[(indices[15]*3)+2], 1.0, 0.0, 0.0,
+		lightVertices[indices[16]*3], lightVertices[(indices[16]*3)+1], lightVertices[(indices[16]*3)+2], 1.0, 0.0, 0.0,
+		lightVertices[indices[17]*3], lightVertices[(indices[17]*3)+1], lightVertices[(indices[17]*3)+2], 1.0, 0.0, 0.0,
 		// left
-		lightVertices[indices[18]*3], lightVertices[(indices[18]*3)+1], lightVertices[(indices[18]*3)+2], lightVertices[indices[19]*3], lightVertices[(indices[19]*3)+1], lightVertices[(indices[19]*3)+2], lightVertices[indices[20]*3], lightVertices[(indices[20]*3)+1], lightVertices[(indices[20]*3)+2],
-		lightVertices[indices[21]*3], lightVertices[(indices[21]*3)+1], lightVertices[(indices[21]*3)+2], lightVertices[indices[22]*3], lightVertices[(indices[22]*3)+1], lightVertices[(indices[22]*3)+2], lightVertices[indices[23]*3], lightVertices[(indices[23]*3)+1], lightVertices[(indices[23]*3)+2],
+		lightVertices[indices[18]*3], lightVertices[(indices[18]*3)+1], lightVertices[(indices[18]*3)+2], -1.0, 0.0, 0.0,
+		lightVertices[indices[19]*3], lightVertices[(indices[19]*3)+1], lightVertices[(indices[19]*3)+2], -1.0, 0.0, 0.0,
+		lightVertices[indices[20]*3], lightVertices[(indices[20]*3)+1], lightVertices[(indices[20]*3)+2], -1.0, 0.0, 0.0,
+		lightVertices[indices[21]*3], lightVertices[(indices[21]*3)+1], lightVertices[(indices[21]*3)+2], -1.0, 0.0, 0.0,
+		lightVertices[indices[22]*3], lightVertices[(indices[22]*3)+1], lightVertices[(indices[22]*3)+2], -1.0, 0.0, 0.0,
+		lightVertices[indices[23]*3], lightVertices[(indices[23]*3)+1], lightVertices[(indices[23]*3)+2], -1.0, 0.0, 0.0,
 		// top
-		lightVertices[indices[24]*3], lightVertices[(indices[24]*3)+1], lightVertices[(indices[24]*3)+2], lightVertices[indices[25]*3], lightVertices[(indices[25]*3)+1], lightVertices[(indices[25]*3)+2], lightVertices[indices[26]*3], lightVertices[(indices[26]*3)+1], lightVertices[(indices[26]*3)+2],
-		lightVertices[indices[27]*3], lightVertices[(indices[27]*3)+1], lightVertices[(indices[27]*3)+2], lightVertices[indices[28]*3], lightVertices[(indices[28]*3)+1], lightVertices[(indices[28]*3)+2], lightVertices[indices[29]*3], lightVertices[(indices[29]*3)+1], lightVertices[(indices[29]*3)+2],
+		lightVertices[indices[24]*3], lightVertices[(indices[24]*3)+1], lightVertices[(indices[24]*3)+2], 0.0, 1.0, 0.0,
+		lightVertices[indices[25]*3], lightVertices[(indices[25]*3)+1], lightVertices[(indices[25]*3)+2], 0.0, 1.0, 0.0,
+		lightVertices[indices[26]*3], lightVertices[(indices[26]*3)+1], lightVertices[(indices[26]*3)+2], 0.0, 1.0, 0.0,
+		lightVertices[indices[27]*3], lightVertices[(indices[27]*3)+1], lightVertices[(indices[27]*3)+2], 0.0, 1.0, 0.0,
+		lightVertices[indices[28]*3], lightVertices[(indices[28]*3)+1], lightVertices[(indices[28]*3)+2], 0.0, 1.0, 0.0,
+		lightVertices[indices[29]*3], lightVertices[(indices[29]*3)+1], lightVertices[(indices[29]*3)+2], 0.0, 1.0, 0.0,
 		// bottom
-		lightVertices[indices[30]*3], lightVertices[(indices[30]*3)+1], lightVertices[(indices[30]*3)+2], lightVertices[indices[31]*3], lightVertices[(indices[31]*3)+1], lightVertices[(indices[31]*3)+2], lightVertices[indices[32]*3], lightVertices[(indices[32]*3)+1], lightVertices[(indices[32]*3)+2],
-		lightVertices[indices[33]*3], lightVertices[(indices[33]*3)+1], lightVertices[(indices[33]*3)+2], lightVertices[indices[34]*3], lightVertices[(indices[34]*3)+1], lightVertices[(indices[34]*3)+2], lightVertices[indices[35]*3], lightVertices[(indices[35]*3)+1], lightVertices[(indices[35]*3)+2],
+		lightVertices[indices[30]*3], lightVertices[(indices[30]*3)+1], lightVertices[(indices[30]*3)+2], 0.0, -1.0, 0.0,
+		lightVertices[indices[31]*3], lightVertices[(indices[31]*3)+1], lightVertices[(indices[31]*3)+2], 0.0, -1.0, 0.0,
+		lightVertices[indices[32]*3], lightVertices[(indices[32]*3)+1], lightVertices[(indices[32]*3)+2], 0.0, -1.0, 0.0,
+		lightVertices[indices[33]*3], lightVertices[(indices[33]*3)+1], lightVertices[(indices[33]*3)+2], 0.0, -1.0, 0.0,
+		lightVertices[indices[34]*3], lightVertices[(indices[34]*3)+1], lightVertices[(indices[34]*3)+2], 0.0, -1.0, 0.0,
+		lightVertices[indices[35]*3], lightVertices[(indices[35]*3)+1], lightVertices[(indices[35]*3)+2], 0.0, -1.0, 0.0,
 	}
 	deltaTime    float32 = 0.0
 	lastFrame    float32 = 0.0
@@ -283,8 +306,11 @@ func createVAO() uint32 {
 	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
 	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*int(unsafe.Sizeof(vertices[0])), gl.Ptr(vertices), gl.STATIC_DRAW)
 
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 3*int32(unsafe.Sizeof(float32(1.0))), gl.Ptr(uintptr(0)))
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 6*int32(unsafe.Sizeof(float32(1.0))), gl.Ptr(uintptr(0)))
 	gl.EnableVertexAttribArray(0)
+
+	gl.VertexAttribPointer(1, 3, gl.FLOAT, false, 6*int32(unsafe.Sizeof(float32(1.0))), gl.Ptr(uintptr(3*int32(unsafe.Sizeof(float32(1.0))))))
+	gl.EnableVertexAttribArray(1)
 
 	gl.BindVertexArray(0)
 	return vao
@@ -358,6 +384,8 @@ func main() {
 	shaderProgram.setMat4("model", model)
 	shaderProgram.setVec3("objColor", skyBlueColor)
 	shaderProgram.setVec3("lightColor", lightColor)
+	shaderProgram.setVec3("lightPos", lightCubePos)
+
 	lightModel = lightModel.Mul4(mgl32.Translate3D(lightCubePos[0], lightCubePos[1], lightCubePos[2]))
 	lightShaderProgram.setMat4("model", lightModel)
 	lightShaderProgram.setVec3("lightColor", lightColor)
