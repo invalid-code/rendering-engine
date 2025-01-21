@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"math"
 	"runtime"
@@ -17,7 +18,7 @@ const (
 )
 
 var (
-	vertices = []float32{
+	lightVertices = []float32{
 		// left top front 0
 		-0.5, 0.5, 0.5,
 		// right top front 1
@@ -55,10 +56,33 @@ var (
 		7, 3, 2,
 		2, 6, 7,
 	}
-	deltaTime float32 = 0.0
-	lastFrame float32 = 0.0
-	lastX     float32 = 400
-	lastY     float32 = 300
+	vertices = []float32{
+		// front
+		lightVertices[indices[0]*3], lightVertices[(indices[0]*3)+1], lightVertices[(indices[0]*3)+2], lightVertices[indices[1]*3], lightVertices[(indices[1]*3)+1], lightVertices[(indices[1]*3)+2], lightVertices[indices[2]*3], lightVertices[(indices[2]*3)+1], lightVertices[(indices[2]*3)+2],
+		lightVertices[indices[3]*3], lightVertices[(indices[3]*3)+1], lightVertices[(indices[3]*3)+2], lightVertices[indices[4]*3], lightVertices[(indices[4]*3)+1], lightVertices[(indices[4]*3)+2], lightVertices[indices[5]*3], lightVertices[(indices[5]*3)+1], lightVertices[(indices[5]*3)+2],
+		// back
+		lightVertices[indices[6]*3], lightVertices[(indices[6]*3)+1], lightVertices[(indices[6]*3)+2], lightVertices[indices[7]*3], lightVertices[(indices[7]*3)+1], lightVertices[(indices[7]*3)+2], lightVertices[indices[8]*3], lightVertices[(indices[8]*3)+1], lightVertices[(indices[8]*3)+2],
+		lightVertices[indices[9]*3], lightVertices[(indices[9]*3)+1], lightVertices[(indices[9]*3)+2], lightVertices[indices[10]*3], lightVertices[(indices[10]*3)+1], lightVertices[(indices[10]*3)+2], lightVertices[indices[11]*3], lightVertices[(indices[11]*3)+1], lightVertices[(indices[11]*3)+2],
+		// right
+		lightVertices[indices[12]*3], lightVertices[(indices[12]*3)+1], lightVertices[(indices[12]*3)+2], lightVertices[indices[13]*3], lightVertices[(indices[13]*3)+1], lightVertices[(indices[13]*3)+2], lightVertices[indices[14]*3], lightVertices[(indices[14]*3)+1], lightVertices[(indices[14]*3)+2],
+		lightVertices[indices[15]*3], lightVertices[(indices[15]*3)+1], lightVertices[(indices[15]*3)+2], lightVertices[indices[16]*3], lightVertices[(indices[16]*3)+1], lightVertices[(indices[16]*3)+2], lightVertices[indices[17]*3], lightVertices[(indices[17]*3)+1], lightVertices[(indices[17]*3)+2],
+		// left
+		lightVertices[indices[18]*3], lightVertices[(indices[18]*3)+1], lightVertices[(indices[18]*3)+2], lightVertices[indices[19]*3], lightVertices[(indices[19]*3)+1], lightVertices[(indices[19]*3)+2], lightVertices[indices[20]*3], lightVertices[(indices[20]*3)+1], lightVertices[(indices[20]*3)+2],
+		lightVertices[indices[21]*3], lightVertices[(indices[21]*3)+1], lightVertices[(indices[21]*3)+2], lightVertices[indices[22]*3], lightVertices[(indices[22]*3)+1], lightVertices[(indices[22]*3)+2], lightVertices[indices[23]*3], lightVertices[(indices[23]*3)+1], lightVertices[(indices[23]*3)+2],
+		// top
+		lightVertices[indices[24]*3], lightVertices[(indices[24]*3)+1], lightVertices[(indices[24]*3)+2], lightVertices[indices[25]*3], lightVertices[(indices[25]*3)+1], lightVertices[(indices[25]*3)+2], lightVertices[indices[26]*3], lightVertices[(indices[26]*3)+1], lightVertices[(indices[26]*3)+2],
+		lightVertices[indices[27]*3], lightVertices[(indices[27]*3)+1], lightVertices[(indices[27]*3)+2], lightVertices[indices[28]*3], lightVertices[(indices[28]*3)+1], lightVertices[(indices[28]*3)+2], lightVertices[indices[29]*3], lightVertices[(indices[29]*3)+1], lightVertices[(indices[29]*3)+2],
+		// bottom
+		lightVertices[indices[30]*3], lightVertices[(indices[30]*3)+1], lightVertices[(indices[30]*3)+2], lightVertices[indices[31]*3], lightVertices[(indices[31]*3)+1], lightVertices[(indices[31]*3)+2], lightVertices[indices[32]*3], lightVertices[(indices[32]*3)+1], lightVertices[(indices[32]*3)+2],
+		lightVertices[indices[33]*3], lightVertices[(indices[33]*3)+1], lightVertices[(indices[33]*3)+2], lightVertices[indices[34]*3], lightVertices[(indices[34]*3)+1], lightVertices[(indices[34]*3)+2], lightVertices[indices[35]*3], lightVertices[(indices[35]*3)+1], lightVertices[(indices[35]*3)+2],
+	}
+	deltaTime    float32 = 0.0
+	lastFrame    float32 = 0.0
+	lastX        float32 = 400
+	lastY        float32 = 300
+	skyBlueColor         = mgl32.Vec3{0.52, 0.81, 0.92}
+	lightColor           = mgl32.Vec3{1.0, 1.0, 1.0}
+	lightCubePos         = mgl32.Vec3{0.0, 3.0, -2.5}
 )
 
 type Camera struct {
@@ -74,13 +98,13 @@ type Camera struct {
 
 func newCamera() Camera {
 	camera := Camera{
-		pos:       mgl32.Vec3{0, 0, 3.0},
-		direction: mgl32.Vec3{0, 0, -1.0},
-		up:        mgl32.Vec3{0, 1.0, 0},
-		fov:       45.0,
-		yaw:       -90.0,
-		pitch:     0,
-		speed:     0,
+		pos:        mgl32.Vec3{0, 0, 3.0},
+		direction:  mgl32.Vec3{0, 0, -1.0},
+		up:         mgl32.Vec3{0, 1.0, 0},
+		fov:        45.0,
+		yaw:        -90.0,
+		pitch:      0,
+		speed:      0,
 		firstMouse: true,
 	}
 	return camera
@@ -215,6 +239,13 @@ func (shaderProgram *ShaderProgram) setMat4(name string, uniformData mgl32.Mat4)
 	gl.UseProgram(0)
 }
 
+func (shaderProgram *ShaderProgram) setVec3(name string, uniformData mgl32.Vec3) {
+	gl.UseProgram(shaderProgram.program)
+	uniformName := gl.Str(name + "\x00")
+	uniformLoc := gl.GetUniformLocation(shaderProgram.program, uniformName)
+	gl.Uniform3fv(uniformLoc, 1, &uniformData[0])
+}
+
 func (shaderProgram *ShaderProgram) activate() {
 	gl.UseProgram(shaderProgram.program)
 }
@@ -223,18 +254,34 @@ func init() {
 	runtime.LockOSThread()
 }
 
-func createVAO() uint32 {
+func createVAOwithEBO() uint32 {
 	var vbo, ebo, vao uint32
 	gl.GenVertexArrays(1, &vao)
 	gl.BindVertexArray(vao)
 
 	gl.GenBuffers(1, &vbo)
 	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*int(unsafe.Sizeof(vertices[0])), gl.Ptr(vertices), gl.STATIC_DRAW)
+	gl.BufferData(gl.ARRAY_BUFFER, len(lightVertices)*int(unsafe.Sizeof(lightVertices[0])), gl.Ptr(lightVertices), gl.STATIC_DRAW)
 
 	gl.GenBuffers(1, &ebo)
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo)
 	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(indices)*int(unsafe.Sizeof(indices[0])), gl.Ptr(indices), gl.STATIC_DRAW)
+
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 3*int32(unsafe.Sizeof(float32(1.0))), gl.Ptr(uintptr(0)))
+	gl.EnableVertexAttribArray(0)
+
+	gl.BindVertexArray(0)
+	return vao
+}
+
+func createVAO() uint32 {
+	var vbo, vao uint32
+	gl.GenVertexArrays(1, &vao)
+	gl.BindVertexArray(vao)
+
+	gl.GenBuffers(1, &vbo)
+	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
+	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*int(unsafe.Sizeof(vertices[0])), gl.Ptr(vertices), gl.STATIC_DRAW)
 
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 3*int32(unsafe.Sizeof(float32(1.0))), gl.Ptr(uintptr(0)))
 	gl.EnableVertexAttribArray(0)
@@ -302,11 +349,18 @@ func main() {
 	gl.Enable(gl.DEPTH_TEST)
 	// gl.PolygonMode(gl.FRONT_AND_BACK, gl.LINE)
 
+	lightVao := createVAOwithEBO()
 	vao := createVAO()
-	shaderProgram := newShaderProgram("assets/shader/basic_trianglev.glsl", "assets/shader/basic_trianglef.glsl")
+	shaderProgram := newShaderProgram("assets/shader/mainCubev.glsl", "assets/shader/mainCubef.glsl")
+	lightShaderProgram := newShaderProgram("assets/shader/lightCubev.glsl", "assets/shader/lightCubef.glsl")
 
-	model := mgl32.Ident4()
+	model, lightModel := mgl32.Ident4(), mgl32.Ident4()
 	shaderProgram.setMat4("model", model)
+	shaderProgram.setVec3("objColor", skyBlueColor)
+	shaderProgram.setVec3("lightColor", lightColor)
+	lightModel = lightModel.Mul4(mgl32.Translate3D(lightCubePos[0], lightCubePos[1], lightCubePos[2]))
+	lightShaderProgram.setMat4("model", lightModel)
+	lightShaderProgram.setVec3("lightColor", lightColor)
 
 	for !window.ShouldClose() {
 		currentFrame := float32(glfw.GetTime())
@@ -314,16 +368,23 @@ func main() {
 		lastFrame = currentFrame
 		processInput(window, &camera)
 
-		gl.ClearColor(1.0, 1.0, 1.0, 1.0)
+		gl.ClearColor(0, 0, 0, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		view := mgl32.LookAtV(camera.pos, camera.cameraTarget(), camera.up)
-		shaderProgram.setMat4("view", view)
 		projection := mgl32.Perspective(mgl32.DegToRad(camera.fov), float32(WIDTH)/float32(HEIGHT), 0.1, 100.0)
+
+		lightShaderProgram.setMat4("view", view)
+		lightShaderProgram.setMat4("projection", projection)
+		lightShaderProgram.activate()
+		gl.BindVertexArray(lightVao)
+		gl.DrawElements(gl.TRIANGLES, int32(len(indices)), gl.UNSIGNED_INT, gl.Ptr(uintptr(0)))
+
+		shaderProgram.setMat4("view", view)
 		shaderProgram.setMat4("projection", projection)
 		shaderProgram.activate()
 		gl.BindVertexArray(vao)
-		gl.DrawElements(gl.TRIANGLES, int32(len(indices)), gl.UNSIGNED_INT, gl.Ptr(uintptr(0)))
+		gl.DrawArrays(gl.TRIANGLES, 0, int32(len(vertices)))
 
 		window.SwapBuffers()
 		glfw.PollEvents()
