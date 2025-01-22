@@ -57,19 +57,19 @@ var (
 	}
 	vertices = []float32{
 		// front
-		lightVertices[indices[0]*3], lightVertices[(indices[0]*3)+1], lightVertices[(indices[0]*3)+2], 0.0, 0.0, -1.0,
-		lightVertices[indices[1]*3], lightVertices[(indices[1]*3)+1], lightVertices[(indices[1]*3)+2], 0.0, 0.0, -1.0,
-		lightVertices[indices[2]*3], lightVertices[(indices[2]*3)+1], lightVertices[(indices[2]*3)+2], 0.0, 0.0, -1.0,
-		lightVertices[indices[3]*3], lightVertices[(indices[3]*3)+1], lightVertices[(indices[3]*3)+2], 0.0, 0.0, -1.0,
-		lightVertices[indices[4]*3], lightVertices[(indices[4]*3)+1], lightVertices[(indices[4]*3)+2], 0.0, 0.0, -1.0,
-		lightVertices[indices[5]*3], lightVertices[(indices[5]*3)+1], lightVertices[(indices[5]*3)+2], 0.0, 0.0, -1.0,
+		lightVertices[indices[0]*3], lightVertices[(indices[0]*3)+1], lightVertices[(indices[0]*3)+2], 0.0, 0.0, 1.0,
+		lightVertices[indices[1]*3], lightVertices[(indices[1]*3)+1], lightVertices[(indices[1]*3)+2], 0.0, 0.0, 1.0,
+		lightVertices[indices[2]*3], lightVertices[(indices[2]*3)+1], lightVertices[(indices[2]*3)+2], 0.0, 0.0, 1.0,
+		lightVertices[indices[3]*3], lightVertices[(indices[3]*3)+1], lightVertices[(indices[3]*3)+2], 0.0, 0.0, 1.0,
+		lightVertices[indices[4]*3], lightVertices[(indices[4]*3)+1], lightVertices[(indices[4]*3)+2], 0.0, 0.0, 1.0,
+		lightVertices[indices[5]*3], lightVertices[(indices[5]*3)+1], lightVertices[(indices[5]*3)+2], 0.0, 0.0, 1.0,
 		// back
-		lightVertices[indices[6]*3], lightVertices[(indices[6]*3)+1], lightVertices[(indices[6]*3)+2], 0.0, 0.0, 1.0,
-		lightVertices[indices[7]*3], lightVertices[(indices[7]*3)+1], lightVertices[(indices[7]*3)+2], 0.0, 0.0, 1.0,
-		lightVertices[indices[8]*3], lightVertices[(indices[8]*3)+1], lightVertices[(indices[8]*3)+2], 0.0, 0.0, 1.0,
-		lightVertices[indices[9]*3], lightVertices[(indices[9]*3)+1], lightVertices[(indices[9]*3)+2], 0.0, 0.0, 1.0,
-		lightVertices[indices[10]*3], lightVertices[(indices[10]*3)+1], lightVertices[(indices[10]*3)+2], 0.0, 0.0, 1.0,
-		lightVertices[indices[11]*3], lightVertices[(indices[11]*3)+1], lightVertices[(indices[11]*3)+2], 0.0, 0.0, 1.0,
+		lightVertices[indices[6]*3], lightVertices[(indices[6]*3)+1], lightVertices[(indices[6]*3)+2], 0.0, 0.0, -1.0,
+		lightVertices[indices[7]*3], lightVertices[(indices[7]*3)+1], lightVertices[(indices[7]*3)+2], 0.0, 0.0, -1.0,
+		lightVertices[indices[8]*3], lightVertices[(indices[8]*3)+1], lightVertices[(indices[8]*3)+2], 0.0, 0.0, -1.0,
+		lightVertices[indices[9]*3], lightVertices[(indices[9]*3)+1], lightVertices[(indices[9]*3)+2], 0.0, 0.0, -1.0,
+		lightVertices[indices[10]*3], lightVertices[(indices[10]*3)+1], lightVertices[(indices[10]*3)+2], 0.0, 0.0, -1.0,
+		lightVertices[indices[11]*3], lightVertices[(indices[11]*3)+1], lightVertices[(indices[11]*3)+2], 0.0, 0.0, -1.0,
 		// right
 		lightVertices[indices[12]*3], lightVertices[(indices[12]*3)+1], lightVertices[(indices[12]*3)+2], 1.0, 0.0, 0.0,
 		lightVertices[indices[13]*3], lightVertices[(indices[13]*3)+1], lightVertices[(indices[13]*3)+2], 1.0, 0.0, 0.0,
@@ -410,6 +410,7 @@ func main() {
 
 		shaderProgram.setMat4("view", view)
 		shaderProgram.setMat4("projection", projection)
+		shaderProgram.setVec3("viewPos", camera.pos)
 		shaderProgram.activate()
 		gl.BindVertexArray(vao)
 		gl.DrawArrays(gl.TRIANGLES, 0, int32(len(vertices)))
