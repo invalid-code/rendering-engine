@@ -1,6 +1,10 @@
 package main
 
 import (
+	"bytes"
+	"image"
+	"image/draw"
+	_ "image/png"
 	"log"
 	"math"
 	"runtime"
@@ -57,47 +61,47 @@ var (
 	}
 	vertices = []float32{
 		// front
-		lightVertices[indices[0]*3], lightVertices[(indices[0]*3)+1], lightVertices[(indices[0]*3)+2], 0.0, 0.0, 1.0,
-		lightVertices[indices[1]*3], lightVertices[(indices[1]*3)+1], lightVertices[(indices[1]*3)+2], 0.0, 0.0, 1.0,
-		lightVertices[indices[2]*3], lightVertices[(indices[2]*3)+1], lightVertices[(indices[2]*3)+2], 0.0, 0.0, 1.0,
-		lightVertices[indices[3]*3], lightVertices[(indices[3]*3)+1], lightVertices[(indices[3]*3)+2], 0.0, 0.0, 1.0,
-		lightVertices[indices[4]*3], lightVertices[(indices[4]*3)+1], lightVertices[(indices[4]*3)+2], 0.0, 0.0, 1.0,
-		lightVertices[indices[5]*3], lightVertices[(indices[5]*3)+1], lightVertices[(indices[5]*3)+2], 0.0, 0.0, 1.0,
+		lightVertices[indices[0]*3], lightVertices[(indices[0]*3)+1], lightVertices[(indices[0]*3)+2], 0.0, 0.0, 1.0, 0.0, 1.0,
+		lightVertices[indices[1]*3], lightVertices[(indices[1]*3)+1], lightVertices[(indices[1]*3)+2], 0.0, 0.0, 1.0, 0.0, 0.0,
+		lightVertices[indices[2]*3], lightVertices[(indices[2]*3)+1], lightVertices[(indices[2]*3)+2], 0.0, 0.0, 1.0, 1.0, 0.0,
+		lightVertices[indices[3]*3], lightVertices[(indices[3]*3)+1], lightVertices[(indices[3]*3)+2], 0.0, 0.0, 1.0, 1.0, 0.0,
+		lightVertices[indices[4]*3], lightVertices[(indices[4]*3)+1], lightVertices[(indices[4]*3)+2], 0.0, 0.0, 1.0, 1.0, 1.0,
+		lightVertices[indices[5]*3], lightVertices[(indices[5]*3)+1], lightVertices[(indices[5]*3)+2], 0.0, 0.0, 1.0, 0.0, 1.0,
 		// back
-		lightVertices[indices[6]*3], lightVertices[(indices[6]*3)+1], lightVertices[(indices[6]*3)+2], 0.0, 0.0, -1.0,
-		lightVertices[indices[7]*3], lightVertices[(indices[7]*3)+1], lightVertices[(indices[7]*3)+2], 0.0, 0.0, -1.0,
-		lightVertices[indices[8]*3], lightVertices[(indices[8]*3)+1], lightVertices[(indices[8]*3)+2], 0.0, 0.0, -1.0,
-		lightVertices[indices[9]*3], lightVertices[(indices[9]*3)+1], lightVertices[(indices[9]*3)+2], 0.0, 0.0, -1.0,
-		lightVertices[indices[10]*3], lightVertices[(indices[10]*3)+1], lightVertices[(indices[10]*3)+2], 0.0, 0.0, -1.0,
-		lightVertices[indices[11]*3], lightVertices[(indices[11]*3)+1], lightVertices[(indices[11]*3)+2], 0.0, 0.0, -1.0,
+		lightVertices[indices[6]*3], lightVertices[(indices[6]*3)+1], lightVertices[(indices[6]*3)+2], 0.0, 0.0, -1.0, 0.0, 1.0,
+		lightVertices[indices[7]*3], lightVertices[(indices[7]*3)+1], lightVertices[(indices[7]*3)+2], 0.0, 0.0, -1.0, 0.0, 0.0,
+		lightVertices[indices[8]*3], lightVertices[(indices[8]*3)+1], lightVertices[(indices[8]*3)+2], 0.0, 0.0, -1.0, 1.0, 0.0,
+		lightVertices[indices[9]*3], lightVertices[(indices[9]*3)+1], lightVertices[(indices[9]*3)+2], 0.0, 0.0, -1.0, 1.0, 0.0,
+		lightVertices[indices[10]*3], lightVertices[(indices[10]*3)+1], lightVertices[(indices[10]*3)+2], 0.0, 0.0, -1.0, 1.0, 1.0,
+		lightVertices[indices[11]*3], lightVertices[(indices[11]*3)+1], lightVertices[(indices[11]*3)+2], 0.0, 0.0, -1.0, 0.0, 1.0,
 		// right
-		lightVertices[indices[12]*3], lightVertices[(indices[12]*3)+1], lightVertices[(indices[12]*3)+2], 1.0, 0.0, 0.0,
-		lightVertices[indices[13]*3], lightVertices[(indices[13]*3)+1], lightVertices[(indices[13]*3)+2], 1.0, 0.0, 0.0,
-		lightVertices[indices[14]*3], lightVertices[(indices[14]*3)+1], lightVertices[(indices[14]*3)+2], 1.0, 0.0, 0.0,
-		lightVertices[indices[15]*3], lightVertices[(indices[15]*3)+1], lightVertices[(indices[15]*3)+2], 1.0, 0.0, 0.0,
-		lightVertices[indices[16]*3], lightVertices[(indices[16]*3)+1], lightVertices[(indices[16]*3)+2], 1.0, 0.0, 0.0,
-		lightVertices[indices[17]*3], lightVertices[(indices[17]*3)+1], lightVertices[(indices[17]*3)+2], 1.0, 0.0, 0.0,
+		lightVertices[indices[12]*3], lightVertices[(indices[12]*3)+1], lightVertices[(indices[12]*3)+2], 1.0, 0.0, 0.0, 0.0, 1.0,
+		lightVertices[indices[13]*3], lightVertices[(indices[13]*3)+1], lightVertices[(indices[13]*3)+2], 1.0, 0.0, 0.0, 0.0, 0.0,
+		lightVertices[indices[14]*3], lightVertices[(indices[14]*3)+1], lightVertices[(indices[14]*3)+2], 1.0, 0.0, 0.0, 1.0, 0.0,
+		lightVertices[indices[15]*3], lightVertices[(indices[15]*3)+1], lightVertices[(indices[15]*3)+2], 1.0, 0.0, 0.0, 1.0, 0.0,
+		lightVertices[indices[16]*3], lightVertices[(indices[16]*3)+1], lightVertices[(indices[16]*3)+2], 1.0, 0.0, 0.0, 1.0, 1.0,
+		lightVertices[indices[17]*3], lightVertices[(indices[17]*3)+1], lightVertices[(indices[17]*3)+2], 1.0, 0.0, 0.0, 0.0, 1.0,
 		// left
-		lightVertices[indices[18]*3], lightVertices[(indices[18]*3)+1], lightVertices[(indices[18]*3)+2], -1.0, 0.0, 0.0,
-		lightVertices[indices[19]*3], lightVertices[(indices[19]*3)+1], lightVertices[(indices[19]*3)+2], -1.0, 0.0, 0.0,
-		lightVertices[indices[20]*3], lightVertices[(indices[20]*3)+1], lightVertices[(indices[20]*3)+2], -1.0, 0.0, 0.0,
-		lightVertices[indices[21]*3], lightVertices[(indices[21]*3)+1], lightVertices[(indices[21]*3)+2], -1.0, 0.0, 0.0,
-		lightVertices[indices[22]*3], lightVertices[(indices[22]*3)+1], lightVertices[(indices[22]*3)+2], -1.0, 0.0, 0.0,
-		lightVertices[indices[23]*3], lightVertices[(indices[23]*3)+1], lightVertices[(indices[23]*3)+2], -1.0, 0.0, 0.0,
+		lightVertices[indices[18]*3], lightVertices[(indices[18]*3)+1], lightVertices[(indices[18]*3)+2], -1.0, 0.0, 0.0, 0.0, 1.0,
+		lightVertices[indices[19]*3], lightVertices[(indices[19]*3)+1], lightVertices[(indices[19]*3)+2], -1.0, 0.0, 0.0, 0.0, 0.0,
+		lightVertices[indices[20]*3], lightVertices[(indices[20]*3)+1], lightVertices[(indices[20]*3)+2], -1.0, 0.0, 0.0, 1.0, 0.0,
+		lightVertices[indices[21]*3], lightVertices[(indices[21]*3)+1], lightVertices[(indices[21]*3)+2], -1.0, 0.0, 0.0, 1.0, 0.0,
+		lightVertices[indices[22]*3], lightVertices[(indices[22]*3)+1], lightVertices[(indices[22]*3)+2], -1.0, 0.0, 0.0, 1.0, 1.0,
+		lightVertices[indices[23]*3], lightVertices[(indices[23]*3)+1], lightVertices[(indices[23]*3)+2], -1.0, 0.0, 0.0, 0.0, 1.0,
 		// top
-		lightVertices[indices[24]*3], lightVertices[(indices[24]*3)+1], lightVertices[(indices[24]*3)+2], 0.0, 1.0, 0.0,
-		lightVertices[indices[25]*3], lightVertices[(indices[25]*3)+1], lightVertices[(indices[25]*3)+2], 0.0, 1.0, 0.0,
-		lightVertices[indices[26]*3], lightVertices[(indices[26]*3)+1], lightVertices[(indices[26]*3)+2], 0.0, 1.0, 0.0,
-		lightVertices[indices[27]*3], lightVertices[(indices[27]*3)+1], lightVertices[(indices[27]*3)+2], 0.0, 1.0, 0.0,
-		lightVertices[indices[28]*3], lightVertices[(indices[28]*3)+1], lightVertices[(indices[28]*3)+2], 0.0, 1.0, 0.0,
-		lightVertices[indices[29]*3], lightVertices[(indices[29]*3)+1], lightVertices[(indices[29]*3)+2], 0.0, 1.0, 0.0,
+		lightVertices[indices[24]*3], lightVertices[(indices[24]*3)+1], lightVertices[(indices[24]*3)+2], 0.0, 1.0, 0.0, 0.0, 1.0,
+		lightVertices[indices[25]*3], lightVertices[(indices[25]*3)+1], lightVertices[(indices[25]*3)+2], 0.0, 1.0, 0.0, 0.0, 0.0,
+		lightVertices[indices[26]*3], lightVertices[(indices[26]*3)+1], lightVertices[(indices[26]*3)+2], 0.0, 1.0, 0.0, 1.0, 0.0,
+		lightVertices[indices[27]*3], lightVertices[(indices[27]*3)+1], lightVertices[(indices[27]*3)+2], 0.0, 1.0, 0.0, 1.0, 0.0,
+		lightVertices[indices[28]*3], lightVertices[(indices[28]*3)+1], lightVertices[(indices[28]*3)+2], 0.0, 1.0, 0.0, 1.0, 1.0,
+		lightVertices[indices[29]*3], lightVertices[(indices[29]*3)+1], lightVertices[(indices[29]*3)+2], 0.0, 1.0, 0.0, 0.0, 1.0,
 		// bottom
-		lightVertices[indices[30]*3], lightVertices[(indices[30]*3)+1], lightVertices[(indices[30]*3)+2], 0.0, -1.0, 0.0,
-		lightVertices[indices[31]*3], lightVertices[(indices[31]*3)+1], lightVertices[(indices[31]*3)+2], 0.0, -1.0, 0.0,
-		lightVertices[indices[32]*3], lightVertices[(indices[32]*3)+1], lightVertices[(indices[32]*3)+2], 0.0, -1.0, 0.0,
-		lightVertices[indices[33]*3], lightVertices[(indices[33]*3)+1], lightVertices[(indices[33]*3)+2], 0.0, -1.0, 0.0,
-		lightVertices[indices[34]*3], lightVertices[(indices[34]*3)+1], lightVertices[(indices[34]*3)+2], 0.0, -1.0, 0.0,
-		lightVertices[indices[35]*3], lightVertices[(indices[35]*3)+1], lightVertices[(indices[35]*3)+2], 0.0, -1.0, 0.0,
+		lightVertices[indices[30]*3], lightVertices[(indices[30]*3)+1], lightVertices[(indices[30]*3)+2], 0.0, -1.0, 0.0, 0.0, 1.0,
+		lightVertices[indices[31]*3], lightVertices[(indices[31]*3)+1], lightVertices[(indices[31]*3)+2], 0.0, -1.0, 0.0, 0.0, 0.0,
+		lightVertices[indices[32]*3], lightVertices[(indices[32]*3)+1], lightVertices[(indices[32]*3)+2], 0.0, -1.0, 0.0, 1.0, 1.0,
+		lightVertices[indices[33]*3], lightVertices[(indices[33]*3)+1], lightVertices[(indices[33]*3)+2], 0.0, -1.0, 0.0, 1.0, 1.0,
+		lightVertices[indices[34]*3], lightVertices[(indices[34]*3)+1], lightVertices[(indices[34]*3)+2], 0.0, -1.0, 0.0, 1.0, 1.0,
+		lightVertices[indices[35]*3], lightVertices[(indices[35]*3)+1], lightVertices[(indices[35]*3)+2], 0.0, -1.0, 0.0, 0.0, 1.0,
 	}
 	deltaTime    float32 = 0.0
 	lastFrame    float32 = 0.0
@@ -267,6 +271,23 @@ func (shaderProgram *ShaderProgram) setVec3(name string, uniformData mgl32.Vec3)
 	uniformName := gl.Str(name + "\x00")
 	uniformLoc := gl.GetUniformLocation(shaderProgram.program, uniformName)
 	gl.Uniform3fv(uniformLoc, 1, &uniformData[0])
+	gl.UseProgram(0)
+}
+
+func (shaderProgram *ShaderProgram) setFloat(name string, uniformData float32) {
+	gl.UseProgram(shaderProgram.program)
+	uniformName := gl.Str(name + "\x00")
+	uniformLoc := gl.GetUniformLocation(shaderProgram.program, uniformName)
+	gl.Uniform1f(uniformLoc, uniformData)
+	gl.UseProgram(0)
+}
+
+func (shaderProgram *ShaderProgram) setInt(name string, uniformData int32) {
+	gl.UseProgram(shaderProgram.program)
+	uniformName := gl.Str(name + "\x00")
+	uniformLoc := gl.GetUniformLocation(shaderProgram.program, uniformName)
+	gl.Uniform1i(uniformLoc, uniformData)
+	gl.UseProgram(0)
 }
 
 func (shaderProgram *ShaderProgram) activate() {
@@ -275,6 +296,28 @@ func (shaderProgram *ShaderProgram) activate() {
 
 func init() {
 	runtime.LockOSThread()
+}
+
+func loadTexture(imgPath string) uint32 {
+	imgBytes := []byte(readFile(imgPath))
+	imgReader := bytes.NewReader(imgBytes)
+	img, _, err := image.Decode(imgReader)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	rgba := image.NewRGBA(img.Bounds())
+	draw.Draw(rgba, rgba.Bounds(), img, img.Bounds().Min, draw.Src)
+	var texture uint32
+	gl.GenTextures(1, &texture)
+	gl.BindTexture(gl.TEXTURE_2D, texture)
+
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
+
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, int32(rgba.Rect.Dx()), int32(rgba.Rect.Dy()), 0, gl.RGBA, gl.UNSIGNED_BYTE, gl.Ptr(rgba.Pix))
+	return texture
 }
 
 func createVAOwithEBO() uint32 {
@@ -290,7 +333,10 @@ func createVAOwithEBO() uint32 {
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ebo)
 	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(indices)*int(unsafe.Sizeof(indices[0])), gl.Ptr(indices), gl.STATIC_DRAW)
 
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 3*int32(unsafe.Sizeof(float32(1.0))), gl.Ptr(uintptr(0)))
+	floatSize := unsafe.Sizeof(float32(1.0))
+	stride := int32(3*floatSize)
+	offset := uintptr(0)
+	gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, stride, offset)
 	gl.EnableVertexAttribArray(0)
 
 	gl.BindVertexArray(0)
@@ -305,12 +351,20 @@ func createVAO() uint32 {
 	gl.GenBuffers(1, &vbo)
 	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
 	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*int(unsafe.Sizeof(vertices[0])), gl.Ptr(vertices), gl.STATIC_DRAW)
-
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, 6*int32(unsafe.Sizeof(float32(1.0))), gl.Ptr(uintptr(0)))
+	
+	floatSize := unsafe.Sizeof(float32(1.0))
+	stride := int32(8*floatSize)
+	offset := uintptr(0)
+	gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, stride, offset)
 	gl.EnableVertexAttribArray(0)
 
-	gl.VertexAttribPointer(1, 3, gl.FLOAT, false, 6*int32(unsafe.Sizeof(float32(1.0))), gl.Ptr(uintptr(3*int32(unsafe.Sizeof(float32(1.0))))))
+	offset += 3*floatSize
+	gl.VertexAttribPointerWithOffset(1, 3, gl.FLOAT, false, stride, offset)
 	gl.EnableVertexAttribArray(1)
+
+	offset += 3*floatSize
+	gl.VertexAttribPointerWithOffset(2, 2, gl.FLOAT, false, stride, offset)
+	gl.EnableVertexAttribArray(2)
 
 	gl.BindVertexArray(0)
 	return vao
@@ -384,11 +438,20 @@ func main() {
 	shaderProgram.setMat4("model", model)
 	shaderProgram.setVec3("objColor", skyBlueColor)
 	shaderProgram.setVec3("lightColor", lightColor)
-	shaderProgram.setVec3("lightPos", lightCubePos)
+	shaderProgram.setVec3("material.ambient", skyBlueColor)
+	shaderProgram.setVec3("material.diffuse", skyBlueColor)
+	shaderProgram.setVec3("material.specular", mgl32.Vec3{0.5, 0.5, 0.5})
+	shaderProgram.setFloat("material.shinniness", 32.0)
+	shaderProgram.setVec3("light.pos", lightCubePos)
+	shaderProgram.setVec3("light.ambient", mgl32.Vec3{0.2, 0.2, 0.2})
+	shaderProgram.setVec3("light.diffuse", mgl32.Vec3{0.5, 0.5, 0.5})
+	shaderProgram.setVec3("light.specular", mgl32.Vec3{1.0, 1.0, 1.0})
 
 	lightModel = lightModel.Mul4(mgl32.Translate3D(lightCubePos[0], lightCubePos[1], lightCubePos[2]))
 	lightShaderProgram.setMat4("model", lightModel)
 	lightShaderProgram.setVec3("lightColor", lightColor)
+
+	texture := loadTexture("assets/texture/Brick_01-256x256.png")
 
 	for !window.ShouldClose() {
 		currentFrame := float32(glfw.GetTime())
@@ -396,7 +459,7 @@ func main() {
 		lastFrame = currentFrame
 		processInput(window, &camera)
 
-		gl.ClearColor(0, 0, 0, 1.0)
+		gl.ClearColor(0.04, 0.12, 0.19, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		view := mgl32.LookAtV(camera.pos, camera.cameraTarget(), camera.up)
@@ -413,6 +476,7 @@ func main() {
 		shaderProgram.setVec3("viewPos", camera.pos)
 		shaderProgram.activate()
 		gl.BindVertexArray(vao)
+		gl.BindTexture(gl.TEXTURE_2D, texture)
 		gl.DrawArrays(gl.TRIANGLES, 0, int32(len(vertices)))
 
 		window.SwapBuffers()
