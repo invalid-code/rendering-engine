@@ -404,6 +404,7 @@ func main() {
 	glfw.WindowHint(glfw.ContextVersionMajor, 3)
 	glfw.WindowHint(glfw.ContextVersionMinor, 3)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
+	glfw.WindowHint(glfw.Samples, 4)
 
 	window, err := glfw.CreateWindow(WIDTH, HEIGHT, "heat rendering engine", nil, nil)
 	if err != nil {
@@ -427,6 +428,8 @@ func main() {
 		camera.zoom(float32(yOff))
 	})
 	gl.Enable(gl.DEPTH_TEST)
+	gl.Enable(gl.MULTISAMPLE)
+	gl.Enable(gl.CULL_FACE)
 	// gl.PolygonMode(gl.FRONT_AND_BACK, gl.LINE)
 
 	lightVao := createVAOwithEBO()
@@ -436,10 +439,8 @@ func main() {
 
 	model, lightModel := mgl32.Ident4(), mgl32.Ident4()
 	shaderProgram.setMat4("model", model)
-	shaderProgram.setVec3("objColor", skyBlueColor)
-	shaderProgram.setVec3("lightColor", lightColor)
-	shaderProgram.setVec3("material.ambient", skyBlueColor)
-	shaderProgram.setVec3("material.diffuse", skyBlueColor)
+	shaderProgram.setInt("material.diffuse", 0)
+	shaderProgram.setInt("material.specular", 1)
 	shaderProgram.setVec3("material.specular", mgl32.Vec3{0.5, 0.5, 0.5})
 	shaderProgram.setFloat("material.shinniness", 32.0)
 	shaderProgram.setVec3("light.pos", lightCubePos)
@@ -452,6 +453,7 @@ func main() {
 	lightShaderProgram.setVec3("lightColor", lightColor)
 
 	texture := loadTexture("assets/texture/Brick_01-256x256.png")
+	specTexture := loadTexture("assets/texture/spec_img.png")
 
 	for !window.ShouldClose() {
 		currentFrame := float32(glfw.GetTime())
@@ -476,7 +478,10 @@ func main() {
 		shaderProgram.setVec3("viewPos", camera.pos)
 		shaderProgram.activate()
 		gl.BindVertexArray(vao)
+		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, texture)
+		gl.ActiveTexture(gl.TEXTURE1)
+		gl.BindTexture(gl.TEXTURE_2D, specTexture)
 		gl.DrawArrays(gl.TRIANGLES, 0, int32(len(vertices)))
 
 		window.SwapBuffers()
