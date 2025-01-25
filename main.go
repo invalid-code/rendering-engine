@@ -7,7 +7,9 @@ import (
 	_ "image/png"
 	"log"
 	"math"
+	"math/rand"
 	"runtime"
+	"time"
 	"unsafe"
 
 	"github.com/go-gl/gl/v3.3-core/gl"
@@ -98,8 +100,8 @@ var (
 		// bottom
 		lightVertices[indices[30]*3], lightVertices[(indices[30]*3)+1], lightVertices[(indices[30]*3)+2], 0.0, -1.0, 0.0, 0.0, 1.0,
 		lightVertices[indices[31]*3], lightVertices[(indices[31]*3)+1], lightVertices[(indices[31]*3)+2], 0.0, -1.0, 0.0, 0.0, 0.0,
-		lightVertices[indices[32]*3], lightVertices[(indices[32]*3)+1], lightVertices[(indices[32]*3)+2], 0.0, -1.0, 0.0, 1.0, 1.0,
-		lightVertices[indices[33]*3], lightVertices[(indices[33]*3)+1], lightVertices[(indices[33]*3)+2], 0.0, -1.0, 0.0, 1.0, 1.0,
+		lightVertices[indices[32]*3], lightVertices[(indices[32]*3)+1], lightVertices[(indices[32]*3)+2], 0.0, -1.0, 0.0, 1.0, 0.0,
+		lightVertices[indices[33]*3], lightVertices[(indices[33]*3)+1], lightVertices[(indices[33]*3)+2], 0.0, -1.0, 0.0, 1.0, 0.0,
 		lightVertices[indices[34]*3], lightVertices[(indices[34]*3)+1], lightVertices[(indices[34]*3)+2], 0.0, -1.0, 0.0, 1.0, 1.0,
 		lightVertices[indices[35]*3], lightVertices[(indices[35]*3)+1], lightVertices[(indices[35]*3)+2], 0.0, -1.0, 0.0, 0.0, 1.0,
 	}
@@ -138,7 +140,7 @@ func newCamera() Camera {
 }
 
 func (camera *Camera) zoom(zoomVal float32) {
-	camera.fov = zoomVal
+	camera.fov -= zoomVal
 	if camera.fov < 1.0 {
 		camera.fov = 1.0
 	}
@@ -334,7 +336,7 @@ func createVAOwithEBO() uint32 {
 	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(indices)*int(unsafe.Sizeof(indices[0])), gl.Ptr(indices), gl.STATIC_DRAW)
 
 	floatSize := unsafe.Sizeof(float32(1.0))
-	stride := int32(3*floatSize)
+	stride := int32(3 * floatSize)
 	offset := uintptr(0)
 	gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, stride, offset)
 	gl.EnableVertexAttribArray(0)
@@ -351,18 +353,18 @@ func createVAO() uint32 {
 	gl.GenBuffers(1, &vbo)
 	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
 	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*int(unsafe.Sizeof(vertices[0])), gl.Ptr(vertices), gl.STATIC_DRAW)
-	
+
 	floatSize := unsafe.Sizeof(float32(1.0))
-	stride := int32(8*floatSize)
+	stride := int32(8 * floatSize)
 	offset := uintptr(0)
 	gl.VertexAttribPointerWithOffset(0, 3, gl.FLOAT, false, stride, offset)
 	gl.EnableVertexAttribArray(0)
 
-	offset += 3*floatSize
+	offset += 3 * floatSize
 	gl.VertexAttribPointerWithOffset(1, 3, gl.FLOAT, false, stride, offset)
 	gl.EnableVertexAttribArray(1)
 
-	offset += 3*floatSize
+	offset += 3 * floatSize
 	gl.VertexAttribPointerWithOffset(2, 2, gl.FLOAT, false, stride, offset)
 	gl.EnableVertexAttribArray(2)
 
@@ -396,6 +398,7 @@ func processInput(window *glfw.Window, camera *Camera) {
 }
 
 func main() {
+	rand.Seed(time.Now().Unix())
 	err := glfw.Init()
 	if err != nil {
 		log.Fatalln(err)
@@ -437,13 +440,16 @@ func main() {
 	shaderProgram := newShaderProgram("assets/shader/mainCubev.glsl", "assets/shader/mainCubef.glsl")
 	lightShaderProgram := newShaderProgram("assets/shader/lightCubev.glsl", "assets/shader/lightCubef.glsl")
 
-	model, lightModel := mgl32.Ident4(), mgl32.Ident4()
-	shaderProgram.setMat4("model", model)
+	lightModel := mgl32.Ident4()
 	shaderProgram.setInt("material.diffuse", 0)
 	shaderProgram.setInt("material.specular", 1)
 	shaderProgram.setVec3("material.specular", mgl32.Vec3{0.5, 0.5, 0.5})
 	shaderProgram.setFloat("material.shinniness", 32.0)
-	shaderProgram.setVec3("light.pos", lightCubePos)
+	shaderProgram.setFloat("light.cutOff", float32(math.Cos(float64(mgl32.DegToRad(12.5)))))
+	shaderProgram.setFloat("light.outerCutOff", float32(math.Cos(float64(mgl32.DegToRad(17.5)))))
+	shaderProgram.setFloat("light.constant", 1.0)
+	shaderProgram.setFloat("light.linear", 0.07)
+	shaderProgram.setFloat("light.quadratic", 0.017)
 	shaderProgram.setVec3("light.ambient", mgl32.Vec3{0.2, 0.2, 0.2})
 	shaderProgram.setVec3("light.diffuse", mgl32.Vec3{0.5, 0.5, 0.5})
 	shaderProgram.setVec3("light.specular", mgl32.Vec3{1.0, 1.0, 1.0})
@@ -455,6 +461,12 @@ func main() {
 	texture := loadTexture("assets/texture/Brick_01-256x256.png")
 	specTexture := loadTexture("assets/texture/spec_img.png")
 
+	pos := make([][]float32, 10)
+	rotAngle := make([][]float32, 10)
+	for i := range pos {
+		pos[i] = randFloats(-3.0, 3.0, 3)
+		rotAngle[i] = randFloats(1.0, 45.0, 3)
+	}
 	for !window.ShouldClose() {
 		currentFrame := float32(glfw.GetTime())
 		deltaTime = currentFrame - lastFrame
@@ -474,15 +486,25 @@ func main() {
 		gl.DrawElements(gl.TRIANGLES, int32(len(indices)), gl.UNSIGNED_INT, gl.Ptr(uintptr(0)))
 
 		shaderProgram.setMat4("view", view)
+		shaderProgram.setVec3("light.pos", camera.pos)
+		shaderProgram.setVec3("light.direction", camera.direction)
 		shaderProgram.setMat4("projection", projection)
 		shaderProgram.setVec3("viewPos", camera.pos)
-		shaderProgram.activate()
 		gl.BindVertexArray(vao)
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, texture)
 		gl.ActiveTexture(gl.TEXTURE1)
 		gl.BindTexture(gl.TEXTURE_2D, specTexture)
-		gl.DrawArrays(gl.TRIANGLES, 0, int32(len(vertices)))
+		for i := 0; i < 10; i++ {
+			model := mgl32.Ident4()
+			model = model.Mul4(mgl32.Rotate3DX(rotAngle[i][0]).Mat4())
+			model = model.Mul4(mgl32.Rotate3DY(rotAngle[i][1]).Mat4())
+			model = model.Mul4(mgl32.Rotate3DZ(rotAngle[i][2]).Mat4())
+			model = model.Mul4(mgl32.Translate3D(pos[0][0], pos[0][1], pos[0][2]))
+			shaderProgram.setMat4("model", model)
+			shaderProgram.activate()
+			gl.DrawArrays(gl.TRIANGLES, 0, int32(len(vertices)))
+		}
 
 		window.SwapBuffers()
 		glfw.PollEvents()

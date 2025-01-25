@@ -1,8 +1,9 @@
 package main
 
 import (
-	"log"
 	"io"
+	"log"
+	"math/rand"
 	"os"
 )
 
@@ -19,4 +20,12 @@ func readFile(path string) string {
 	}
 	fileContent := string(data)
 	return fileContent
+}
+
+func randFloats(min, max float32, n int) []float32 {
+	res := make([]float32, n)
+	for i := range res {
+		res[i] = min + rand.Float32() * (max - min)
+	}
+	return res
 }
