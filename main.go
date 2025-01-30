@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"image"
 	"image/draw"
 	_ "image/png"
@@ -105,13 +106,15 @@ var (
 		lightVertices[indices[34]*3], lightVertices[(indices[34]*3)+1], lightVertices[(indices[34]*3)+2], 0.0, -1.0, 0.0, 1.0, 1.0,
 		lightVertices[indices[35]*3], lightVertices[(indices[35]*3)+1], lightVertices[(indices[35]*3)+2], 0.0, -1.0, 0.0, 0.0, 1.0,
 	}
-	deltaTime    float32 = 0.0
-	lastFrame    float32 = 0.0
-	lastX        float32 = 400
-	lastY        float32 = 300
-	skyBlueColor         = mgl32.Vec3{0.52, 0.81, 0.92}
-	lightColor           = mgl32.Vec3{1.0, 1.0, 1.0}
-	lightCubePos         = mgl32.Vec3{0.0, 3.0, -2.5}
+	pointLightsPositions         = []mgl32.Vec3{mgl32.Vec3(randFloats(-5.0, 5.0, 3)), mgl32.Vec3(randFloats(-5.0, 5.0, 3)), mgl32.Vec3(randFloats(-5.0, 5.0, 3)), mgl32.Vec3(randFloats(-5.0, 5.0, 3))}
+	deltaTime            float32 = 0.0
+	lastFrame            float32 = 0.0
+	lastX                float32 = 400
+	lastY                float32 = 300
+	lightColor                   = mgl32.Vec3{1.0, 1.0, 1.0}
+	ambient                      = mgl32.Vec3{0.2, 0.2, 0.2}
+	diffuse                      = mgl32.Vec3{0.7, 0.7, 0.7}
+	specular                     = mgl32.Vec3{1.0, 1.0, 1.0}
 )
 
 type Camera struct {
@@ -440,23 +443,31 @@ func main() {
 	shaderProgram := newShaderProgram("assets/shader/mainCubev.glsl", "assets/shader/mainCubef.glsl")
 	lightShaderProgram := newShaderProgram("assets/shader/lightCubev.glsl", "assets/shader/lightCubef.glsl")
 
-	lightModel := mgl32.Ident4()
 	shaderProgram.setInt("material.diffuse", 0)
 	shaderProgram.setInt("material.specular", 1)
 	shaderProgram.setVec3("material.specular", mgl32.Vec3{0.5, 0.5, 0.5})
 	shaderProgram.setFloat("material.shinniness", 32.0)
-	shaderProgram.setFloat("light.cutOff", float32(math.Cos(float64(mgl32.DegToRad(12.5)))))
-	shaderProgram.setFloat("light.outerCutOff", float32(math.Cos(float64(mgl32.DegToRad(17.5)))))
-	shaderProgram.setFloat("light.constant", 1.0)
-	shaderProgram.setFloat("light.linear", 0.07)
-	shaderProgram.setFloat("light.quadratic", 0.017)
-	shaderProgram.setVec3("light.ambient", mgl32.Vec3{0.2, 0.2, 0.2})
-	shaderProgram.setVec3("light.diffuse", mgl32.Vec3{0.5, 0.5, 0.5})
-	shaderProgram.setVec3("light.specular", mgl32.Vec3{1.0, 1.0, 1.0})
-
-	lightModel = lightModel.Mul4(mgl32.Translate3D(lightCubePos[0], lightCubePos[1], lightCubePos[2]))
-	lightShaderProgram.setMat4("model", lightModel)
-	lightShaderProgram.setVec3("lightColor", lightColor)
+	shaderProgram.setVec3("dirLight.direction", mgl32.Vec3{0.0, -1.0, 0.0})
+	shaderProgram.setVec3("dirLight.ambient", ambient)
+	shaderProgram.setVec3("dirLight.diffuse", diffuse)
+	shaderProgram.setVec3("dirLight.specular", specular)
+	for i, pointLightPos := range pointLightsPositions {
+		shaderProgram.setVec3(fmt.Sprintf("pointLights[%d].pos", i), pointLightPos)
+		shaderProgram.setVec3(fmt.Sprintf("pointLights[%d].ambient", i), ambient)
+		shaderProgram.setVec3(fmt.Sprintf("pointLights[%d].diffuse", i), diffuse)
+		shaderProgram.setVec3(fmt.Sprintf("pointLights[%d].specular", i), specular)
+		shaderProgram.setFloat(fmt.Sprintf("pointLights[%d].constant", i), 1.0)
+		shaderProgram.setFloat(fmt.Sprintf("pointLights[%d].linear", i), 0.045)
+		shaderProgram.setFloat(fmt.Sprintf("pointLights[%d].quadratic", i), 0.0075)
+	}
+	shaderProgram.setVec3("spotLight.ambient", ambient)
+	shaderProgram.setVec3("spotLight.diffuse", diffuse)
+	shaderProgram.setVec3("spotLight.specular", specular)
+	shaderProgram.setFloat("spotLight.cutOff", float32(math.Cos(float64(mgl32.DegToRad(9.5)))))
+	shaderProgram.setFloat("spotLight.outerCutOff", float32(math.Cos(float64(mgl32.DegToRad(12.5)))))
+	shaderProgram.setFloat("spotLight.constant", 1.0)
+	shaderProgram.setFloat("spotLight.linear", 0.045)
+	shaderProgram.setFloat("spotLight.quadratic", 0.0075)
 
 	texture := loadTexture("assets/texture/Brick_01-256x256.png")
 	specTexture := loadTexture("assets/texture/spec_img.png")
@@ -481,15 +492,21 @@ func main() {
 
 		lightShaderProgram.setMat4("view", view)
 		lightShaderProgram.setMat4("projection", projection)
-		lightShaderProgram.activate()
+		lightShaderProgram.setVec3("lightColor", lightColor)
 		gl.BindVertexArray(lightVao)
-		gl.DrawElements(gl.TRIANGLES, int32(len(indices)), gl.UNSIGNED_INT, gl.Ptr(uintptr(0)))
+		for _, pointLightPosition := range pointLightsPositions {
+			lightModel := mgl32.Ident4()
+			lightModel = lightModel.Mul4(mgl32.Translate3D(pointLightPosition[0], pointLightPosition[1], pointLightPosition[2]))
+			lightShaderProgram.setMat4("model", lightModel)
+			lightShaderProgram.activate()
+			gl.DrawElements(gl.TRIANGLES, int32(len(indices)), gl.UNSIGNED_INT, gl.Ptr(uintptr(0)))
+		}
 
 		shaderProgram.setMat4("view", view)
-		shaderProgram.setVec3("light.pos", camera.pos)
-		shaderProgram.setVec3("light.direction", camera.direction)
 		shaderProgram.setMat4("projection", projection)
 		shaderProgram.setVec3("viewPos", camera.pos)
+		shaderProgram.setVec3("spotLight.pos", camera.pos)
+		shaderProgram.setVec3("spotLight.direction", camera.direction)
 		gl.BindVertexArray(vao)
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, texture)
